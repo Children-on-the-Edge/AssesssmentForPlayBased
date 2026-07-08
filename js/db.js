@@ -183,27 +183,48 @@ const DB = (() => {
     return rows;
   }
 
-  function tool1FromCSVRows(rows) {
-    const meta = { id: "", dob: "", age: "", gender: "", zone: "", setting: "", date: "", facilitator: "", assessor: "" };
-    const metaMap = {
-      ID: "id", "Date of Birth": "dob", Age: "age", Gender: "gender",
-      Zone: "zone", Setting: "setting", "Date of Assessment": "date",
-      Facilitator: "facilitator", Assessor: "assessor"
-    };
-    // Note: "Name" is deliberately not read from CSVs — child names are never stored.
-    const scores = {};
-    const comments = {};
+  // Parses CSV rows where each data column after the label column is a separate
+  // record (so a 1-column file behaves exactly like the old single-record parser,
+  // and a many-column bulk-import file — e.g. one column per child — produces one
+  // record per column instead of silently reading only the first).
+  function parseMultiCSVRows(rows, metaMap) {
+    let n = 0;
+    for (const row of rows) if (row.length - 1 > n) n = row.length - 1;
+    if (n < 1) n = 1;
+    const records = Array.from({ length: n }, () => ({ meta: {}, scores: {}, comments: {} }));
     let section = "meta";
     for (const row of rows) {
       if (row.length === 0 || (row.length === 1 && row[0] === "")) continue;
       const first = (row[0] || "").trim();
       if (first === "Goal") { section = "goals"; continue; }
       if (first === "Comments") { section = "comments"; continue; }
-      if (section === "meta" && metaMap[first]) { meta[metaMap[first]] = row[1] || ""; continue; }
-      if (section === "goals" && row.length >= 2) { scores[first] = row[1] === "\u2014" ? "" : row[1]; continue; }
-      if (section === "comments" && row.length >= 2) { comments[first] = row[1] || ""; continue; }
+      if (section === "meta" && metaMap[first]) {
+        for (let c = 0; c < n; c++) records[c].meta[metaMap[first]] = row[c + 1] || "";
+        continue;
+      }
+      if (section === "goals" && row.length >= 2) {
+        for (let c = 0; c < n; c++) {
+          const v = row[c + 1];
+          records[c].scores[first] = (v === undefined || v === "\u2014") ? "" : v;
+        }
+        continue;
+      }
+      if (section === "comments" && row.length >= 2) {
+        for (let c = 0; c < n; c++) records[c].comments[first] = row[c + 1] || "";
+        continue;
+      }
     }
-    return { meta, scores, comments };
+    return records;
+  }
+
+  function tool1FromCSVRows(rows) {
+    const metaMap = {
+      ID: "id", "Date of Birth": "dob", Age: "age", Gender: "gender",
+      Zone: "zone", Setting: "setting", "Date of Assessment": "date",
+      Facilitator: "facilitator", Assessor: "assessor"
+    };
+    // Note: "Name" is deliberately not read from CSVs — child names are never stored.
+    return parseMultiCSVRows(rows, metaMap); // always an array — 1 entry for a single-record file
   }
 
   function tool2ToCSVRows(rec) {
@@ -228,21 +249,8 @@ const DB = (() => {
   }
 
   function tool2FromCSVRows(rows) {
-    const meta = { zone: "", setting: "", date: "", facilitator: "", assessor: "" };
     const metaMap = { Zone: "zone", Setting: "setting", "Date of Assessment": "date", Facilitator: "facilitator", Assessor: "assessor" };
-    const scores = {};
-    const comments = {};
-    let section = "meta";
-    for (const row of rows) {
-      if (row.length === 0 || (row.length === 1 && row[0] === "")) continue;
-      const first = (row[0] || "").trim();
-      if (first === "Goal") { section = "goals"; continue; }
-      if (first === "Comments") { section = "comments"; continue; }
-      if (section === "meta" && metaMap[first]) { meta[metaMap[first]] = row[1] || ""; continue; }
-      if (section === "goals" && row.length >= 2) { scores[first] = row[1] === "\u2014" ? "" : row[1]; continue; }
-      if (section === "comments" && row.length >= 2) { comments[first] = row[1] || ""; continue; }
-    }
-    return { meta, scores, comments };
+    return parseMultiCSVRows(rows, metaMap); // always an array — 1 entry for a single-record file
   }
 
   function downloadText(filename, text) {
