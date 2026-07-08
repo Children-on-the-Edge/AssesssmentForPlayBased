@@ -1,0 +1,26 @@
+HOW TO OPEN THIS APP
+====================
+
+Windows:
+  Double-click "Start PPAT Tool (Windows).bat"
+
+Mac:
+  Double-click "Start PPAT Tool (Mac).command"
+  (If your Mac blocks it the first time: right-click the file, choose
+  "Open", then click "Open" again on the warning popup. You only need
+  to do this once.)
+
+Chromebook:
+  Open the "index.html" file's folder in the Files app, right-click
+  index.html, and choose "Open with" > a browser (e.g. Chrome).
+
+That's it — the app opens in your browser and works fully offline
+from then on. All your saved assessments stay on this device only.
+
+TIP: Once it's open, you can pin the browser tab, or bookmark it, so
+it's always one click away.
+
+Need it on more than one device, or want it to feel like a "real"
+installed app with its own icon (works especially well on
+Chromebook)? Ask whoever set this up for you about the "PWA install"
+option described in README.md.

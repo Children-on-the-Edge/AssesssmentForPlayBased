@@ -1,0 +1,47 @@
+{
+  "name": "ppat-children-on-the-edge",
+  "productName": "Children on the Edge",
+  "version": "1.0.0",
+  "description": "Assessment for Play-based Early Childhood Education — child development and environmental assessment tool.",
+  "main": "electron-main.js",
+  "author": "Children on the Edge",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist": "electron-builder --win --mac"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "org.childrenontheedge.ppat",
+    "productName": "Children on the Edge",
+    "directories": { "output": "dist" },
+    "files": [
+      "electron-main.js",
+      "index.html",
+      "manifest.json",
+      "sw.js",
+      "css/**/*",
+      "js/**/*",
+      "icons/**/*"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "icons/icon-256.png"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "icons/icon-512.png",
+      "category": "public.app-category.education"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
