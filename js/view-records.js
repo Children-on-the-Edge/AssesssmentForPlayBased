@@ -371,6 +371,7 @@ function renderRecordsView(tool) {
     fileInput.onchange = async () => {
       const files = Array.from(fileInput.files || []);
       let count = 0;
+      const savedRecords = [];
       for (const file of files) {
         try {
           const text = await file.text();
@@ -381,7 +382,8 @@ function renderRecordsView(tool) {
             const hasMeta = Object.values(rec.meta || {}).some(v => v);
             const hasScores = Object.values(rec.scores || {}).some(v => v);
             if (!hasMeta && !hasScores) continue;
-            if (isT1) DB.tool1.save(rec); else DB.tool2.save(rec);
+            const saved = isT1 ? DB.tool1.save(rec) : DB.tool2.save(rec);
+            savedRecords.push(saved);
             count++;
           }
         } catch (e) { console.error(e); }
@@ -390,6 +392,26 @@ function renderRecordsView(tool) {
       fileInput.value = "";
       if (isT1) renderZonePanel();
       draw();
+
+      // Push each imported record to the shared Google Sheet too, if Cloud Sync is set up.
+      // Sequential (not parallel) to stay gentle on the Sheets API; runs in the background
+      // and reports back with a follow-up toast rather than blocking the import itself.
+      if (window.SheetsSync && SheetsSync.isConfigured() && savedRecords.length) {
+        let synced = 0, failed = 0;
+        for (const rec of savedRecords) {
+          try {
+            await SheetsSync.pushRecord(tool, rec);
+            synced++;
+          } catch (e) {
+            failed++;
+          }
+        }
+        if (failed === 0) {
+          toast(`Synced ${synced} imported record${synced !== 1 ? "s" : ""} to the shared sheet.`, "success");
+        } else {
+          toast(`Synced ${synced}, but ${failed} failed to sync \u2014 try "Pull Latest" or re-import later.`, "error");
+        }
+      }
     };
 
     main.querySelectorAll("[data-del]").forEach(btn => {
