@@ -43,11 +43,171 @@ function tool2SectionSummary(rec, sectionDefs) {
   return out;
 }
 
+// ── Comparisons (Zone / Setting / Year) — heatmap-style breakdown tables ─
+function recordYear(rec) {
+  const d = (rec.meta && rec.meta.date) || "";
+  const m = d.match(/(\d{4})/);
+  return m ? m[1] : "Unspecified";
+}
+
+function tool1SectionAvgForGroup(records, prefix) {
+  const vals = [];
+  for (const rec of records) {
+    for (const [goal, score] of Object.entries(rec.scores || {})) {
+      if (goalPrefix(goal) === prefix) {
+        const v = TOOL1_NUMERIC[score];
+        if (v !== undefined) vals.push(v);
+      }
+    }
+  }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+function tool1OverallForGroup(records) {
+  const vals = [];
+  for (const rec of records) {
+    for (const score of Object.values(rec.scores || {})) {
+      const v = TOOL1_NUMERIC[score];
+      if (v !== undefined) vals.push(v);
+    }
+  }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+function tool2SectionPctForGroup(records, sectionGoals) {
+  let yes = 0, total = 0;
+  for (const rec of records) {
+    for (const goal of sectionGoals) {
+      const v = (rec.scores || {})[goal];
+      if (v === "Yes") { yes++; total++; }
+      else if (v === "No") { total++; }
+    }
+  }
+  return total ? (yes / total) * 100 : null;
+}
+
+function tool2OverallPctForGroup(records) {
+  let yes = 0, total = 0;
+  for (const rec of records) {
+    for (const v of Object.values(rec.scores || {})) {
+      if (v === "Yes") { yes++; total++; }
+      else if (v === "No") { total++; }
+    }
+  }
+  return total ? (yes / total) * 100 : null;
+}
+
+function tool1CellStyle(v) {
+  if (v === null) return { bg: "#f1f5f9", fg: "#94a3b8" };
+  if (v >= 1.6) return { bg: "#bbf7d0", fg: "#14532d" };
+  if (v >= 1.0) return { bg: "#fde68a", fg: "#78350f" };
+  return { bg: "#fecaca", fg: "#7f1d1d" };
+}
+
+function tool2CellStyle(v) {
+  if (v === null) return { bg: "#f1f5f9", fg: "#94a3b8" };
+  if (v >= 51) return { bg: "#bbf7d0", fg: "#14532d" };
+  if (v >= 25) return { bg: "#fde68a", fg: "#78350f" };
+  return { bg: "#fecaca", fg: "#7f1d1d" };
+}
+
+function renderHeatmapTable(tool, title, records, groupKeyFn, rowLabel) {
+  const groups = {};
+  for (const rec of records) {
+    const key = (groupKeyFn(rec) || "").toString().trim() || "Unspecified";
+    (groups[key] = groups[key] || []).push(rec);
+  }
+  const groupNames = Object.keys(groups).sort();
+  if (!groupNames.length) {
+    return `<div class="score-card"><div class="sc-title">${esc(title)}</div><div class="sc-body">No scored data yet.</div></div>`;
+  }
+
+  const isT1 = tool === "tool1";
+  let colKeys, colLabel, cellValue, overallValue, cellStyle, fmt;
+  if (isT1) {
+    colKeys = Object.keys(SECTION_LABELS);
+    colLabel = (k) => k; // short code (SE, FM, ...) keeps columns narrow; full name is in the legend elsewhere
+    cellValue = (recs, k) => tool1SectionAvgForGroup(recs, k);
+    overallValue = tool1OverallForGroup;
+    cellStyle = tool1CellStyle;
+    fmt = (v) => v === null ? "\u2014" : v.toFixed(2);
+  } else {
+    const sections = DB.tool2Sections.get();
+    colKeys = Object.keys(sections);
+    colLabel = (k) => k;
+    cellValue = (recs, k) => tool2SectionPctForGroup(recs, sections[k].goals);
+    overallValue = tool2OverallPctForGroup;
+    cellStyle = tool2CellStyle;
+    fmt = (v) => v === null ? "\u2014" : Math.round(v) + "%";
+  }
+
+  const headerCells = colKeys.map(k =>
+    `<th style="font-size:10px;font-weight:700;color:var(--text-mid);padding:6px 5px;white-space:normal;max-width:80px;border-bottom:1px solid var(--card-border)">${esc(colLabel(k))}</th>`
+  ).join("");
+
+  const bodyRows = groupNames.map(name => {
+    const recs = groups[name];
+    const cells = colKeys.map(k => {
+      const v = cellValue(recs, k);
+      const s = cellStyle(v);
+      return `<td style="text-align:center;background:${s.bg};color:${s.fg};font-weight:700;padding:5px 4px;border-bottom:1px solid #fff">${fmt(v)}</td>`;
+    }).join("");
+    const ov = overallValue(recs);
+    const ovStyle = cellStyle(ov);
+    return `<tr>
+      <td style="font-weight:700;font-size:12px;padding:5px 8px;border-bottom:1px solid #fff;white-space:nowrap">${esc(name)}</td>
+      ${cells}
+      <td style="text-align:center;background:${ovStyle.bg};color:${ovStyle.fg};font-weight:700;padding:5px 6px;border-bottom:1px solid #fff">${fmt(ov)}</td>
+      <td style="text-align:right;color:var(--text-light);font-size:11px;padding:5px 8px;border-bottom:1px solid #fff">${recs.length}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <div class="score-card" style="overflow-x:auto">
+      <div class="sc-title">${esc(title)}</div>
+      <table style="width:100%;border-collapse:collapse;margin-top:8px">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px;border-bottom:1px solid var(--card-border)">${esc(rowLabel)}</th>
+          ${headerCells}
+          <th style="font-size:10px;color:var(--text-mid);padding:6px 6px;border-bottom:1px solid var(--card-border)">Overall</th>
+          <th style="font-size:10px;color:var(--text-mid);padding:6px 8px;border-bottom:1px solid var(--card-border)">Records</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderComparisonsTab(tool, yearFilter) {
+  const allRecords = tool === "tool1" ? DB.tool1.all() : DB.tool2.all();
+  const years = Array.from(new Set(allRecords.map(recordYear))).sort();
+  const filtered = (!yearFilter || yearFilter === "All") ? allRecords : allRecords.filter(r => recordYear(r) === yearFilter);
+  const isT1 = tool === "tool1";
+  const scaleNote = isT1
+    ? "Scores out of 2.00 \u2014 green \u2265 1.60, amber \u2265 1.00, red below"
+    : "% of goals scored \u201cYes\u201d \u2014 green \u2265 51%, amber \u2265 25%, red below";
+
+  const yearOptions = ["All", ...years].map(y => `<option value="${esc(y)}" ${y === (yearFilter || "All") ? "selected" : ""}>${esc(y)}</option>`).join("");
+
+  return `
+    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-width:1100px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;font-weight:700;color:var(--text-mid)">Year:</label>
+        <select id="cmp-year">${yearOptions}</select>
+        <span style="font-size:11px;color:var(--text-light);margin-left:8px">${esc(scaleNote)}</span>
+      </div>
+      ${renderHeatmapTable(tool, "By Setting", filtered, r => r.meta && r.meta.setting, "Setting")}
+      ${renderHeatmapTable(tool, "By Zone", filtered, r => r.meta && r.meta.zone, "Zone")}
+      ${renderHeatmapTable(tool, "Year on Year (all years, unfiltered)", allRecords, recordYear, "Year")}
+    </div>
+  `;
+}
+
 // ── Generic table rendering ─────────────────────────────────────────
 function renderRecordsView(tool) {
   const isT1 = tool === "tool1";
   const main = document.getElementById("main");
-  const state = { search: "", age: "All", setting: "All", facilitator: "All" };
+  const state = { search: "", age: "All", setting: "All", facilitator: "All", view: "list", compareYear: "All" };
 
   function buildRows() {
     const records = isT1 ? DB.tool1.all() : DB.tool2.all();
@@ -116,13 +276,14 @@ function renderRecordsView(tool) {
 
     const syncAvailable = window.SheetsSync && SheetsSync.isConfigured();
 
-    main.innerHTML = `
-      <div class="tool-header">
-        <div class="left">
-          <button class="back-btn" id="rv-back">Back</button>
-          <h2>${isT1 ? "Child Development Records" : "Environmental Records"}</h2>
-        </div>
+    const tabsHtml = `
+      <div class="settings-tabs" style="padding:12px 18px 0">
+        <button class="settings-tab ${state.view === "list" ? "active" : ""}" data-view="list">Records</button>
+        <button class="settings-tab ${state.view === "comparisons" ? "active" : ""}" data-view="comparisons">Comparisons</button>
       </div>
+    `;
+
+    const bodyHtml = state.view === "comparisons" ? renderComparisonsTab(tool, state.compareYear) : `
       <div class="records-toolbar">
         <span class="count-label" id="rv-count"></span>
         <div style="display:flex;gap:8px">
@@ -145,7 +306,28 @@ function renderRecordsView(tool) {
       <input type="file" id="rv-file-input" accept=".csv" multiple style="display:none" />
     `;
 
+    main.innerHTML = `
+      <div class="tool-header">
+        <div class="left">
+          <button class="back-btn" id="rv-back">Back</button>
+          <h2>${isT1 ? "Child Development Records" : "Environmental Records"}</h2>
+        </div>
+      </div>
+      ${tabsHtml}
+      ${bodyHtml}
+    `;
+
     document.getElementById("rv-back").onclick = () => window.App.navigate("dashboard");
+    main.querySelectorAll("[data-view]").forEach(btn => {
+      btn.addEventListener("click", () => { state.view = btn.dataset.view; draw(); });
+    });
+
+    if (state.view !== "list") {
+      const yearSel = document.getElementById("cmp-year");
+      if (yearSel) yearSel.addEventListener("change", () => { state.compareYear = yearSel.value; draw(); });
+      return; // comparisons tab has no other controls to wire up
+    }
+
     document.getElementById("rv-count").textContent = `${filtered.length} record${filtered.length !== 1 ? "s" : ""}` + (filtered.length !== allRows.length ? ` (of ${allRows.length})` : "");
 
     const searchEl = document.getElementById("rv-search");
