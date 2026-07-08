@@ -1,0 +1,163 @@
+/* view-tool1.js — Child Development Tool data entry. */
+
+function renderTool1(existingId) {
+  const main = document.getElementById("main");
+  const sections = DB.tool1Sections.get();
+  const values = DB.values.get();
+  const existing = existingId ? DB.tool1.get(existingId) : null;
+
+  const meta = existing ? existing.meta : {
+    id: "", dob: "", age: "", gender: "M",
+    zone: (values.Zone && values.Zone[0]) || "",
+    setting: (values.Setting && values.Setting[0]) || "",
+    date: new Date().toLocaleDateString("en-GB"),
+    facilitator: (values.Facilitator && values.Facilitator[0]) || "",
+    assessor: (values.Assessor && values.Assessor[0]) || ""
+  };
+  // The child's name is only kept in memory to help the facilitator while filling in
+  // the rest of the form (e.g. to double-check they've picked the right ID). It is
+  // never written into `meta`, never saved, and never exported — only the ID is stored.
+  let nameOnScreen = "";
+  const scores = existing ? { ...existing.scores } : {};
+  const comments = existing ? { ...existing.comments } : {};
+
+  const legendChips = Object.entries(TOOL1_SCORE_LEGEND).map(([val, desc]) => {
+    const c = TOOL1_SCORE_COLORS[val];
+    return `<span class="chip" style="background:${c.bg};color:${c.fg}">${val} \u2013 ${esc(desc)}</span>`;
+  }).join("");
+
+  function dropdown(name, current, options, width) {
+    return `<select data-field="${name}" style="min-width:${width || 110}px">
+      ${options.map(o => `<option value="${esc(o)}" ${o === current ? "selected" : ""}>${esc(o)}</option>`).join("")}
+    </select>`;
+  }
+
+  const sectionsHtml = Object.entries(sections).map(([title, data]) => {
+    const goalRows = data.goals.map(goal => {
+      const label = goal.includes(":") ? goal.split(":").slice(1).join(":").trim() : goal;
+      const current = scores[goal] || "";
+      const btns = TOOL1_SCORE_OPTIONS.map(opt => {
+        const selected = current === opt;
+        const c = TOOL1_SCORE_COLORS[opt];
+        const style = selected ? `background:${c.bg};color:${c.fg}` : "";
+        return `<button type="button" class="score-btn" data-goal="${esc(goal)}" data-val="${opt}" style="${style}">${opt}</button>`;
+      }).join("");
+      return `<div class="goal-row"><span class="goal-text">${esc(label)}</span><div class="score-btns">${btns}</div></div>`;
+    }).join("");
+    return `<div class="section-panel">
+      <div class="sp-header"><h4>${esc(title)}</h4></div>
+      ${goalRows}
+      <div class="sp-divider"></div>
+      <div class="sp-comments">
+        <label>Additional Comments:</label>
+        <textarea data-comment="${esc(data.comment_key)}">${esc(comments[data.comment_key] || "")}</textarea>
+      </div>
+    </div>`;
+  }).join("");
+
+  main.innerHTML = `
+    <div class="tool-header">
+      <div class="left">
+        <button class="back-btn" id="t1-back">Back</button>
+        <h2>Child Development Tool</h2>
+      </div>
+      <div class="legend">${legendChips}</div>
+    </div>
+    <div class="info-bar">
+      <div class="info-row">
+        <div class="field-col"><label>ID</label><input data-field="id" placeholder="Student ID" value="${esc(meta.id)}" style="width:110px" /></div>
+        <div class="field-col"><label>Name <span style="font-weight:400;color:var(--text-light)">(not saved)</span></label><input data-name-only placeholder="Full name" value="" style="width:180px" /></div>
+        <div class="field-col"><label>Date of Birth</label><input data-field="dob" placeholder="DD/MM/YYYY" value="${esc(meta.dob)}" style="width:110px" /></div>
+        <div class="field-col"><label>Age</label><input data-field="age" placeholder="e.g. 5" value="${esc(meta.age)}" style="width:60px" /></div>
+        <div class="field-col"><label>Gender</label>${dropdown("gender", meta.gender, ["M", "F"], 70)}</div>
+      </div>
+      <div class="info-row" style="margin-top:8px">
+        <div class="field-col"><label>Zone</label>${dropdown("zone", meta.zone, values.Zone || [], 140)}</div>
+        <div class="field-col"><label>Setting</label>${dropdown("setting", meta.setting, values.Setting || [], 140)}</div>
+        <div class="field-col"><label>Date of Assessment</label><input data-field="date" value="${esc(meta.date)}" style="width:110px" /></div>
+        <div class="field-col"><label>Facilitator</label>${dropdown("facilitator", meta.facilitator, values.Facilitator || [], 200)}</div>
+        <div class="field-col"><label>Assessor</label>${dropdown("assessor", meta.assessor, values.Assessor || [], 200)}</div>
+      </div>
+    </div>
+    <div class="sections-scroll">${sectionsHtml}</div>
+    <div class="tool-footer">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="t1-save">Save Assessment</button>
+        <button class="btn btn-outline" id="t1-export-csv">Export CSV</button>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="t1-progress-fill" style="width:0%"></div></div>
+        <span class="progress-label" id="t1-progress-label">0/0 scored</span>
+      </div>
+      <button class="btn btn-grey" id="t1-reset">Reset Form</button>
+    </div>
+  `;
+
+  document.getElementById("t1-back").onclick = () => window.App.navigate("dashboard");
+
+  main.querySelectorAll("[data-field]").forEach(el => {
+    el.addEventListener("input", () => { meta[el.dataset.field] = el.value; });
+    el.addEventListener("change", () => { meta[el.dataset.field] = el.value; });
+  });
+  const nameEl = main.querySelector("[data-name-only]");
+  if (nameEl) nameEl.addEventListener("input", () => { nameOnScreen = nameEl.value; });
+  main.querySelectorAll("[data-comment]").forEach(el => {
+    el.addEventListener("input", () => { comments[el.dataset.comment] = el.value; });
+  });
+
+  function updateProgress() {
+    const totalGoals = Object.values(sections).reduce((n, s) => n + s.goals.length, 0);
+    const done = Object.values(scores).filter(v => v).length;
+    document.getElementById("t1-progress-fill").style.width = totalGoals ? `${(done / totalGoals) * 100}%` : "0%";
+    document.getElementById("t1-progress-label").textContent = `${done}/${totalGoals} scored`;
+  }
+
+  main.querySelectorAll(".score-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const goal = btn.dataset.goal, val = btn.dataset.val;
+      scores[goal] = scores[goal] === val ? "" : val;
+      // refresh sibling buttons for this goal
+      main.querySelectorAll(`.score-btn[data-goal="${CSS.escape(goal)}"]`).forEach(b => {
+        const selected = scores[goal] === b.dataset.val;
+        const c = TOOL1_SCORE_COLORS[b.dataset.val];
+        b.style.cssText = selected ? `background:${c.bg};color:${c.fg}` : "";
+      });
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  function collect() {
+    return { id: existing ? existing.id : undefined, meta: { ...meta }, scores: { ...scores }, comments: { ...comments } };
+  }
+
+  document.getElementById("t1-save").onclick = () => {
+    const rec = DB.tool1.save(collect());
+    toast("Assessment saved.", "success");
+    renderZonePanel();
+    renderTool1(rec.id);
+
+    // Best-effort push to the shared Google Sheet ledger, if Cloud Sync is set up.
+    // Never blocks the save and never surfaces an error louder than a toast.
+    if (window.SheetsSync && SheetsSync.isConfigured()) {
+      SheetsSync.pushRecord("tool1", rec)
+        .then(() => toast("Synced to shared sheet.", "success"))
+        .catch(err => toast("Saved locally, but cloud sync failed: " + err.message, "error"));
+    }
+  };
+
+  document.getElementById("t1-export-csv").onclick = () => {
+    const rec = collect();
+    if (!rec.id) rec.id = DB.uid();
+    const csv = DB.toCSVRows(DB.tool1ToCSVRows(rec));
+    const idPart = (meta.id || "student").replace(/[<>:"/\\|?*]/g, "_");
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    DB.downloadText(`assessment_${idPart}_${datePart}.csv`, csv);
+  };
+
+  document.getElementById("t1-reset").onclick = async () => {
+    const ok = await confirmDialog("Clear all scores and comments?", "Reset Form");
+    if (ok) renderTool1();
+  };
+}
