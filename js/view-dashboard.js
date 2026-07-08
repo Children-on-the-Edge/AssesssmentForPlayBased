@@ -46,7 +46,7 @@ function renderDashboard() {
           <button class="go-btn">Open &rarr;</button>
         </div>
         <div class="nav-card" style="--stripe:var(--green)" data-go="tool1records">
-          <h4>Averages &amp; Stats</h4>
+          <h4>Child Development Records</h4>
           <p>Browse child development records and view per-section averages.</p>
           <button class="go-btn">Open &rarr;</button>
         </div>
