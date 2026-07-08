@@ -120,7 +120,7 @@ function renderRecordsView(tool) {
       <div class="tool-header">
         <div class="left">
           <button class="back-btn" id="rv-back">Back</button>
-          <h2>${isT1 ? "Averages & Stats" : "Environmental Records"}</h2>
+          <h2>${isT1 ? "Child Development Records" : "Environmental Records"}</h2>
         </div>
       </div>
       <div class="records-toolbar">
@@ -193,12 +193,18 @@ function renderRecordsView(tool) {
         try {
           const text = await file.text();
           const rows = DB.parseCSV(text);
-          const parsed = isT1 ? DB.tool1FromCSVRows(rows) : DB.tool2FromCSVRows(rows);
-          if (isT1) DB.tool1.save(parsed); else DB.tool2.save(parsed);
-          count++;
+          const parsedRecords = isT1 ? DB.tool1FromCSVRows(rows) : DB.tool2FromCSVRows(rows);
+          for (const rec of parsedRecords) {
+            // Skip completely blank columns (e.g. a stray empty column in the source file)
+            const hasMeta = Object.values(rec.meta || {}).some(v => v);
+            const hasScores = Object.values(rec.scores || {}).some(v => v);
+            if (!hasMeta && !hasScores) continue;
+            if (isT1) DB.tool1.save(rec); else DB.tool2.save(rec);
+            count++;
+          }
         } catch (e) { console.error(e); }
       }
-      toast(`Imported ${count} file${count !== 1 ? "s" : ""}.`, "success");
+      toast(`Imported ${count} record${count !== 1 ? "s" : ""}.`, "success");
       fileInput.value = "";
       if (isT1) renderZonePanel();
       draw();
