@@ -11,6 +11,7 @@ const App = (() => {
     else if (key === "tool2") renderTool2(arg);
     else if (key === "tool1records") renderRecordsView("tool1");
     else if (key === "tool2records") renderRecordsView("tool2");
+    else if (key === "cloudsync") renderCloudSyncPage();
     else if (key === "settings") gotoSettings();
   }
 
