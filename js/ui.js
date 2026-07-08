@@ -164,7 +164,7 @@ const NAV_ITEMS = [
   { key: "dashboard", label: "Home", icon: "\u2302" },
   { key: "tool1", label: "Child Development Tool", icon: "\uD83D\uDCCB" },
   { key: "tool2", label: "Environmental Tool", icon: "\uD83D\uDCCB" },
-  { key: "tool1records", label: "Averages & Stats", icon: "\uD83D\uDCCA" },
+  { key: "tool1records", label: "Child Development Records", icon: "\uD83D\uDCCA" },
   { key: "tool2records", label: "Environmental Records", icon: "\uD83D\uDCC1" }
 ];
 
