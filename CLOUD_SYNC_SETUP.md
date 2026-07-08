@@ -28,24 +28,7 @@ desktop app can still save locally and use manual Backup/Restore or CSV
 export as before.
 
 ---
-
-## Part 1 — Host the app on GitHub Pages (one-time, ~10 minutes)
-
-1. Create a free GitHub account if you don't have one: https://github.com/join
-2. Create a new repository (e.g. `ppat-app`), and upload all the app files into it
-   keeping the same folder structure (`index.html`, `css/`, `js/`, `icons/`,
-   `manifest.json`, `sw.js`).
-   - Easiest way: on the repo page, click **Add file → Upload files**, drag in
-     everything, and commit.
-3. Go to the repo's **Settings → Pages**.
-4. Under "Build and deployment", set **Source** to "Deploy from a branch", branch
-   `main`, folder `/ (root)`, then **Save**.
-5. After a minute or two, GitHub will show you a URL like:
-   `https://<your-username>.github.io/ppat-app/`
-   That's your app's real https:// address — this is what facilitators will open,
-   and what you'll register with Google in Part 2.
-
-## Part 2 — Create a Google Cloud OAuth Client (one-time, ~10 minutes)
+## Part 1 — Create a Google Cloud OAuth Client (one-time, ~10 minutes)
 
 1. Go to https://console.cloud.google.com/ and sign in with the Google account
    that should own this (e.g. an organisational account, not a personal one).
@@ -77,7 +60,7 @@ export as before.
      `123456789-abc...apps.googleusercontent.com`). You do **not** need the
      client secret — this app never uses it.
 
-## Part 3 — Create the shared spreadsheet and link everything
+## Part 2 — Create the shared spreadsheet and link everything
 
 1. Open the hosted app (your GitHub Pages URL) in Chrome.
 2. Click **Cloud Sync** in the sidebar (it sits in its own "SYNC" section — no
@@ -116,8 +99,6 @@ export as before.
 
 ## Troubleshooting
 
-- **"This page isn't served over https"** — you're opening the app from a
-  local file or the Electron app; Cloud Sync needs the GitHub Pages URL.
 - **Google shows an error on sign-in about the app not being verified /
   unknown app** — expected while the OAuth consent screen is in "Testing"
   mode; make sure that Google account was added as a test user in Part 2.
