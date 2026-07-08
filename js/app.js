@@ -27,6 +27,9 @@ const App = (() => {
 
   async function boot() {
     await DB.init();
+    if (applyOrgSetupLinkIfPresent()) {
+      toast("Organization setup applied to this device.", "success");
+    }
     renderZonePanel();
     navigate("dashboard");
 
