@@ -14,7 +14,6 @@ function renderSettings() {
         <button class="settings-tab" data-tab="tool1sections">Tool 1 Sections</button>
         <button class="settings-tab" data-tab="tool2sections">Tool 2 Sections</button>
         <button class="settings-tab" data-tab="backup">Backup &amp; Restore</button>
-        <button class="settings-tab" data-tab="cloudsync">Cloud Sync</button>
         <button class="settings-tab" data-tab="security">Security</button>
       </div>
       <div class="settings-body" id="st-body"></div>
@@ -29,7 +28,6 @@ function renderSettings() {
     else if (state.tab === "tool1sections") drawSectionsTab(body, "tool1");
     else if (state.tab === "tool2sections") drawSectionsTab(body, "tool2");
     else if (state.tab === "backup") drawBackupTab(body);
-    else if (state.tab === "cloudsync") drawCloudSyncTab(body);
     else if (state.tab === "security") drawSecurityTab(body);
   }
 
@@ -185,107 +183,6 @@ function renderSettings() {
     document.getElementById("restore-replace").onclick = () => doRestore("replace");
   }
 
-  function drawCloudSyncTab(body) {
-    function draw() {
-      const clientId = SheetsSync.getClientId();
-      const sheetId = SheetsSync.getSheetId();
-      const connected = SheetsSync.isConnected();
-      const isHttps = location.protocol === "https:";
-
-      body.innerHTML = `
-        ${!isHttps ? `
-          <div class="score-card" style="max-width:600px;border-color:#f59e0b">
-            <div class="sc-title" style="color:#92400e">This page isn't served over https</div>
-            <div class="sc-body">Google sign-in only works when this app is opened from a real https:// address (e.g. your GitHub Pages URL), not a local file. Cloud Sync won't be able to connect from here.</div>
-          </div>
-        ` : ""}
-        <div class="score-card" style="max-width:600px">
-          <div class="sc-title">1. Google Client ID</div>
-          <div class="sc-body">The OAuth Client ID from your Google Cloud project (see setup guide). This is not secret and is safe to store here.</div>
-          <input id="cs-client-id" value="${esc(clientId)}" placeholder="xxxxxxxxxx.apps.googleusercontent.com" style="width:100%;margin-top:8px;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px" />
-          <button class="btn btn-outline" id="cs-save-client" style="margin-top:8px">Save Client ID</button>
-        </div>
-
-        <div class="score-card" style="max-width:600px;margin-top:12px">
-          <div class="sc-title">2. Shared Spreadsheet</div>
-          <div class="sc-body">Paste the ID from the shared Google Sheet's URL (the long string between <code>/d/</code> and <code>/edit</code>), or connect and create a new one.</div>
-          <input id="cs-sheet-id" value="${esc(sheetId)}" placeholder="Spreadsheet ID" style="width:100%;margin-top:8px;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px" />
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn btn-outline" id="cs-save-sheet">Save Spreadsheet ID</button>
-            <button class="btn btn-outline" id="cs-create-sheet" ${clientId ? "" : "disabled"}>Connect &amp; Create New Sheet</button>
-          </div>
-        </div>
-
-        <div class="score-card" style="max-width:600px;margin-top:12px">
-          <div class="sc-title">3. Connection</div>
-          <div class="sc-body">Status: <strong style="color:${connected ? "var(--green)" : "var(--text-light)"}">${connected ? "Connected" : "Not connected"}</strong></div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn btn-primary" id="cs-connect" ${clientId && sheetId ? "" : "disabled"}>Connect to Google</button>
-            <button class="btn btn-outline" id="cs-pull-t1" ${clientId && sheetId ? "" : "disabled"}>Pull Latest (Tool 1)</button>
-            <button class="btn btn-outline" id="cs-pull-t2" ${clientId && sheetId ? "" : "disabled"}>Pull Latest (Tool 2)</button>
-            <button class="btn btn-grey" id="cs-disconnect">Disconnect</button>
-          </div>
-          <div id="cs-status" style="margin-top:8px;font-size:12px;color:var(--text-mid)"></div>
-        </div>
-      `;
-
-      document.getElementById("cs-save-client").onclick = () => {
-        SheetsSync.setClientId(document.getElementById("cs-client-id").value);
-        toast("Client ID saved.", "success");
-        draw();
-      };
-      document.getElementById("cs-save-sheet").onclick = () => {
-        SheetsSync.setSheetId(document.getElementById("cs-sheet-id").value);
-        toast("Spreadsheet ID saved.", "success");
-        draw();
-      };
-      document.getElementById("cs-create-sheet").onclick = async () => {
-        const status = document.getElementById("cs-status");
-        status.textContent = "Connecting to Google\u2026";
-        try {
-          await SheetsSync.createNewSheet("PPAT Shared Data");
-          status.textContent = "New spreadsheet created and linked.";
-          toast("New shared spreadsheet created.", "success");
-          draw();
-        } catch (e) {
-          status.textContent = "Error: " + e.message;
-        }
-      };
-      document.getElementById("cs-connect").onclick = async () => {
-        const status = document.getElementById("cs-status");
-        status.textContent = "Opening Google sign-in\u2026";
-        try {
-          await SheetsSync.connect("consent");
-          status.textContent = "Connected.";
-          toast("Connected to Google.", "success");
-          draw();
-        } catch (e) {
-          status.textContent = "Error: " + e.message;
-        }
-      };
-      document.getElementById("cs-disconnect").onclick = () => {
-        SheetsSync.disconnect();
-        toast("Disconnected.");
-        draw();
-      };
-      async function pull(tool, label) {
-        const status = document.getElementById("cs-status");
-        status.textContent = `Pulling latest ${label} records\u2026`;
-        try {
-          const n = await SheetsSync.syncNow(tool);
-          status.textContent = `Done. ${n} record(s) updated from the shared sheet.`;
-          toast(`${label}: pulled ${n} updated record(s).`, "success");
-          renderZonePanel();
-        } catch (e) {
-          status.textContent = "Error: " + e.message;
-        }
-      }
-      document.getElementById("cs-pull-t1").onclick = () => pull("tool1", "Tool 1");
-      document.getElementById("cs-pull-t2").onclick = () => pull("tool2", "Tool 2");
-    }
-    draw();
-  }
-
   function drawSecurityTab(body) {
     const a = DB.auth.get();
     body.innerHTML = `
@@ -314,6 +211,123 @@ function renderSettings() {
       }
       toast("Credentials updated.", "success");
     };
+  }
+
+  draw();
+}
+
+// ── Cloud Sync — standalone page, no admin login required ────────────
+// Deliberately separate from renderSettings(): the Client ID and Spreadsheet ID
+// aren't secrets (see CLOUD_SYNC_SETUP.md), and the real access control is each
+// person's own Google sign-in plus the shared Sheet's own sharing permissions —
+// not the app's admin password. Gating this behind Settings would just force
+// every facilitator to know the admin credentials for no real security benefit.
+function renderCloudSyncPage() {
+  const main = document.getElementById("main");
+
+  function draw() {
+    const clientId = SheetsSync.getClientId();
+    const sheetId = SheetsSync.getSheetId();
+    const connected = SheetsSync.isConnected();
+    const isHttps = location.protocol === "https:";
+
+    main.innerHTML = `
+      <div class="tool-header">
+        <div class="left"><button class="back-btn" id="cs-back">Back</button><h2>Cloud Sync</h2></div>
+      </div>
+      <div class="settings-body">
+        ${!isHttps ? `
+          <div class="score-card" style="max-width:600px;border-color:#f59e0b">
+            <div class="sc-title" style="color:#92400e">This page isn't served over https</div>
+            <div class="sc-body">Google sign-in only works when this app is opened from a real https:// address (e.g. your GitHub Pages URL), not a local file. Cloud Sync won't be able to connect from here.</div>
+          </div>
+        ` : ""}
+        <div class="score-card" style="max-width:600px">
+          <div class="sc-title">1. Google Client ID</div>
+          <div class="sc-body">The OAuth Client ID for this organization (ask whoever set up Cloud Sync if you don't have it). This is not secret and is safe to store here.</div>
+          <input id="cs-client-id" value="${esc(clientId)}" placeholder="xxxxxxxxxx.apps.googleusercontent.com" style="width:100%;margin-top:8px;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px" />
+          <button class="btn btn-outline" id="cs-save-client" style="margin-top:8px">Save Client ID</button>
+        </div>
+
+        <div class="score-card" style="max-width:600px;margin-top:12px">
+          <div class="sc-title">2. Shared Spreadsheet</div>
+          <div class="sc-body">Paste the ID from the shared Google Sheet's URL (the long string between <code>/d/</code> and <code>/edit</code>), or connect and create a new one.</div>
+          <input id="cs-sheet-id" value="${esc(sheetId)}" placeholder="Spreadsheet ID" style="width:100%;margin-top:8px;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-outline" id="cs-save-sheet">Save Spreadsheet ID</button>
+            <button class="btn btn-outline" id="cs-create-sheet" ${clientId ? "" : "disabled"}>Connect &amp; Create New Sheet</button>
+          </div>
+        </div>
+
+        <div class="score-card" style="max-width:600px;margin-top:12px">
+          <div class="sc-title">3. Connection</div>
+          <div class="sc-body">Status: <strong style="color:${connected ? "var(--green)" : "var(--text-light)"}">${connected ? "Connected" : "Not connected"}</strong></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn btn-primary" id="cs-connect" ${clientId && sheetId ? "" : "disabled"}>Connect to Google</button>
+            <button class="btn btn-outline" id="cs-pull-t1" ${clientId && sheetId ? "" : "disabled"}>Pull Latest (Tool 1)</button>
+            <button class="btn btn-outline" id="cs-pull-t2" ${clientId && sheetId ? "" : "disabled"}>Pull Latest (Tool 2)</button>
+            <button class="btn btn-grey" id="cs-disconnect">Disconnect</button>
+          </div>
+          <div id="cs-status" style="margin-top:8px;font-size:12px;color:var(--text-mid)"></div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("cs-back").onclick = () => window.App.navigate("dashboard");
+
+    document.getElementById("cs-save-client").onclick = () => {
+      SheetsSync.setClientId(document.getElementById("cs-client-id").value);
+      toast("Client ID saved.", "success");
+      draw();
+    };
+    document.getElementById("cs-save-sheet").onclick = () => {
+      SheetsSync.setSheetId(document.getElementById("cs-sheet-id").value);
+      toast("Spreadsheet ID saved.", "success");
+      draw();
+    };
+    document.getElementById("cs-create-sheet").onclick = async () => {
+      const status = document.getElementById("cs-status");
+      status.textContent = "Connecting to Google\u2026";
+      try {
+        await SheetsSync.createNewSheet("PPAT Shared Data");
+        status.textContent = "New spreadsheet created and linked.";
+        toast("New shared spreadsheet created.", "success");
+        draw();
+      } catch (e) {
+        status.textContent = "Error: " + e.message;
+      }
+    };
+    document.getElementById("cs-connect").onclick = async () => {
+      const status = document.getElementById("cs-status");
+      status.textContent = "Opening Google sign-in\u2026";
+      try {
+        await SheetsSync.connect("consent");
+        status.textContent = "Connected.";
+        toast("Connected to Google.", "success");
+        draw();
+      } catch (e) {
+        status.textContent = "Error: " + e.message;
+      }
+    };
+    document.getElementById("cs-disconnect").onclick = () => {
+      SheetsSync.disconnect();
+      toast("Disconnected.");
+      draw();
+    };
+    async function pull(tool, label) {
+      const status = document.getElementById("cs-status");
+      status.textContent = `Pulling latest ${label} records\u2026`;
+      try {
+        const n = await SheetsSync.syncNow(tool);
+        status.textContent = `Done. ${n} record(s) updated from the shared sheet.`;
+        toast(`${label}: pulled ${n} updated record(s).`, "success");
+        renderZonePanel();
+      } catch (e) {
+        status.textContent = "Error: " + e.message;
+      }
+    }
+    document.getElementById("cs-pull-t1").onclick = () => pull("tool1", "Tool 1");
+    document.getElementById("cs-pull-t2").onclick = () => pull("tool2", "Tool 2");
   }
 
   draw();
