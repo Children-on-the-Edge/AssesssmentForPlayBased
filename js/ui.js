@@ -191,6 +191,9 @@ function renderSidebar(activeKey) {
     <div class="version">v1.0 &middot; Children on the Edge</div>
   `;
   sidebar.querySelectorAll("[data-nav]").forEach(btn => {
-    btn.addEventListener("click", () => window.App.navigate(btn.dataset.nav));
+    btn.addEventListener("click", () => {
+      window.App.navigate(btn.dataset.nav);
+      if (window.closeMobileMenu) window.closeMobileMenu();
+    });
   });
 }
