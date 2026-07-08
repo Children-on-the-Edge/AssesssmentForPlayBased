@@ -1,30 +1,20 @@
-/* view-tool1.js — Child Development Tool data entry. */
+/* view-tool2.js — Environmental Tool data entry. */
 
-function renderTool1(existingId) {
+function renderTool2(existingId) {
   const main = document.getElementById("main");
-  const sections = DB.tool1Sections.get();
+  const sections = DB.tool2Sections.get();
   const values = DB.values.get();
-  const existing = existingId ? DB.tool1.get(existingId) : null;
+  const existing = existingId ? DB.tool2.get(existingId) : null;
 
   const meta = existing ? existing.meta : {
-    id: "", dob: "", age: "", gender: "M",
     zone: (values.Zone && values.Zone[0]) || "",
     setting: (values.Setting && values.Setting[0]) || "",
     date: new Date().toLocaleDateString("en-GB"),
     facilitator: (values.Facilitator && values.Facilitator[0]) || "",
     assessor: (values.Assessor && values.Assessor[0]) || ""
   };
-  // The child's name is only kept in memory to help the facilitator while filling in
-  // the rest of the form (e.g. to double-check they've picked the right ID). It is
-  // never written into `meta`, never saved, and never exported — only the ID is stored.
-  let nameOnScreen = "";
   const scores = existing ? { ...existing.scores } : {};
   const comments = existing ? { ...existing.comments } : {};
-
-  const legendChips = Object.entries(TOOL1_SCORE_LEGEND).map(([val, desc]) => {
-    const c = TOOL1_SCORE_COLORS[val];
-    return `<span class="chip" style="background:${c.bg};color:${c.fg}">${val} \u2013 ${esc(desc)}</span>`;
-  }).join("");
 
   function dropdown(name, current, options, width) {
     return `<select data-field="${name}" style="min-width:${width || 110}px">
@@ -36,9 +26,9 @@ function renderTool1(existingId) {
     const goalRows = data.goals.map(goal => {
       const label = goal.includes(":") ? goal.split(":").slice(1).join(":").trim() : goal;
       const current = scores[goal] || "";
-      const btns = TOOL1_SCORE_OPTIONS.map(opt => {
+      const btns = TOOL2_SCORE_OPTIONS.map(opt => {
         const selected = current === opt;
-        const c = TOOL1_SCORE_COLORS[opt];
+        const c = TOOL2_SCORE_COLORS[opt];
         const style = selected ? `background:${c.bg};color:${c.fg}` : "";
         return `<button type="button" class="score-btn" data-goal="${esc(goal)}" data-val="${opt}" style="${style}">${opt}</button>`;
       }).join("");
@@ -58,49 +48,43 @@ function renderTool1(existingId) {
   main.innerHTML = `
     <div class="tool-header">
       <div class="left">
-        <button class="back-btn" id="t1-back">Back</button>
-        <h2>Child Development Tool</h2>
+        <button class="back-btn" id="t2-back">Back</button>
+        <h2>Environmental Tool</h2>
       </div>
-      <div class="legend">${legendChips}</div>
+      <div class="legend">
+        <span class="chip" style="background:#bbf7d0;color:#14532d">Yes</span>
+        <span class="chip" style="background:#fecaca;color:#7f1d1d">No</span>
+      </div>
     </div>
     <div class="info-bar">
       <div class="info-row">
-        <div class="field-col"><label>ID</label><input data-field="id" placeholder="Student ID" value="${esc(meta.id)}" style="width:110px" /></div>
-        <div class="field-col"><label>Name <span style="font-weight:400;color:var(--text-light)">(not saved)</span></label><input data-name-only placeholder="Full name" value="" style="width:180px" /></div>
-        <div class="field-col"><label>Date of Birth</label><input data-field="dob" placeholder="DD/MM/YYYY" value="${esc(meta.dob)}" style="width:110px" /></div>
-        <div class="field-col"><label>Age</label><input data-field="age" placeholder="e.g. 5" value="${esc(meta.age)}" style="width:60px" /></div>
-        <div class="field-col"><label>Gender</label>${dropdown("gender", meta.gender, ["M", "F"], 70)}</div>
-      </div>
-      <div class="info-row" style="margin-top:8px">
-        <div class="field-col"><label>Zone</label>${dropdown("zone", meta.zone, values.Zone || [], 140)}</div>
-        <div class="field-col"><label>Setting</label>${dropdown("setting", meta.setting, values.Setting || [], 140)}</div>
-        <div class="field-col"><label>Date of Assessment</label><input data-field="date" value="${esc(meta.date)}" style="width:110px" /></div>
-        <div class="field-col"><label>Facilitator</label>${dropdown("facilitator", meta.facilitator, values.Facilitator || [], 200)}</div>
-        <div class="field-col"><label>Assessor</label>${dropdown("assessor", meta.assessor, values.Assessor || [], 200)}</div>
+        <div class="field-col"><label>Zone</label>${dropdown("zone", meta.zone, values.Zone || [], 150)}</div>
+        <div class="field-col"><label>Setting</label>${dropdown("setting", meta.setting, values.Setting || [], 150)}</div>
+        <div class="field-col"><label>Date of Assessment</label><input data-field="date" value="${esc(meta.date)}" style="width:120px" /></div>
+        <div class="field-col"><label>Facilitator</label>${dropdown("facilitator", meta.facilitator, values.Facilitator || [], 220)}</div>
+        <div class="field-col"><label>Assessor</label>${dropdown("assessor", meta.assessor, values.Assessor || [], 220)}</div>
       </div>
     </div>
     <div class="sections-scroll">${sectionsHtml}</div>
     <div class="tool-footer">
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" id="t1-save">Save Assessment</button>
-        <button class="btn btn-outline" id="t1-export-csv">Export CSV</button>
+        <button class="btn btn-primary" id="t2-save">Save as CSV</button>
+        <button class="btn btn-outline" id="t2-export-csv">Export CSV</button>
       </div>
       <div class="progress-wrap">
-        <div class="progress-track"><div class="progress-fill" id="t1-progress-fill" style="width:0%"></div></div>
-        <span class="progress-label" id="t1-progress-label">0/0 scored</span>
+        <div class="progress-track"><div class="progress-fill" id="t2-progress-fill" style="width:0%"></div></div>
+        <span class="progress-label" id="t2-progress-label">0/0 scored</span>
       </div>
-      <button class="btn btn-grey" id="t1-reset">Reset Form</button>
+      <button class="btn btn-grey" id="t2-reset">Reset Form</button>
     </div>
   `;
 
-  document.getElementById("t1-back").onclick = () => window.App.navigate("dashboard");
+  document.getElementById("t2-back").onclick = () => window.App.navigate("dashboard");
 
   main.querySelectorAll("[data-field]").forEach(el => {
     el.addEventListener("input", () => { meta[el.dataset.field] = el.value; });
     el.addEventListener("change", () => { meta[el.dataset.field] = el.value; });
   });
-  const nameEl = main.querySelector("[data-name-only]");
-  if (nameEl) nameEl.addEventListener("input", () => { nameOnScreen = nameEl.value; });
   main.querySelectorAll("[data-comment]").forEach(el => {
     el.addEventListener("input", () => { comments[el.dataset.comment] = el.value; });
   });
@@ -108,18 +92,17 @@ function renderTool1(existingId) {
   function updateProgress() {
     const totalGoals = Object.values(sections).reduce((n, s) => n + s.goals.length, 0);
     const done = Object.values(scores).filter(v => v).length;
-    document.getElementById("t1-progress-fill").style.width = totalGoals ? `${(done / totalGoals) * 100}%` : "0%";
-    document.getElementById("t1-progress-label").textContent = `${done}/${totalGoals} scored`;
+    document.getElementById("t2-progress-fill").style.width = totalGoals ? `${(done / totalGoals) * 100}%` : "0%";
+    document.getElementById("t2-progress-label").textContent = `${done}/${totalGoals} scored`;
   }
 
   main.querySelectorAll(".score-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const goal = btn.dataset.goal, val = btn.dataset.val;
       scores[goal] = scores[goal] === val ? "" : val;
-      // refresh sibling buttons for this goal
       main.querySelectorAll(`.score-btn[data-goal="${CSS.escape(goal)}"]`).forEach(b => {
         const selected = scores[goal] === b.dataset.val;
-        const c = TOOL1_SCORE_COLORS[b.dataset.val];
+        const c = TOOL2_SCORE_COLORS[b.dataset.val];
         b.style.cssText = selected ? `background:${c.bg};color:${c.fg}` : "";
       });
       updateProgress();
@@ -132,32 +115,28 @@ function renderTool1(existingId) {
     return { id: existing ? existing.id : undefined, meta: { ...meta }, scores: { ...scores }, comments: { ...comments } };
   }
 
-  document.getElementById("t1-save").onclick = () => {
-    const rec = DB.tool1.save(collect());
+  document.getElementById("t2-save").onclick = () => {
+    const rec = DB.tool2.save(collect());
     toast("Assessment saved.", "success");
-    renderZonePanel();
-    renderTool1(rec.id);
+    renderTool2(rec.id);
 
-    // Best-effort push to the shared Google Sheet ledger, if Cloud Sync is set up.
-    // Never blocks the save and never surfaces an error louder than a toast.
     if (window.SheetsSync && SheetsSync.isConfigured()) {
-      SheetsSync.pushRecord("tool1", rec)
+      SheetsSync.pushRecord("tool2", rec)
         .then(() => toast("Synced to shared sheet.", "success"))
         .catch(err => toast("Saved locally, but cloud sync failed: " + err.message, "error"));
     }
   };
 
-  document.getElementById("t1-export-csv").onclick = () => {
+  document.getElementById("t2-export-csv").onclick = () => {
     const rec = collect();
     if (!rec.id) rec.id = DB.uid();
-    const csv = DB.toCSVRows(DB.tool1ToCSVRows(rec));
-    const idPart = (meta.id || "student").replace(/[<>:"/\\|?*]/g, "_");
-    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    DB.downloadText(`assessment_${idPart}_${datePart}.csv`, csv);
+    const csv = DB.toCSVRows(DB.tool2ToCSVRows(rec));
+    const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
+    DB.downloadText(`assessment_tool2_${stamp}.csv`, csv);
   };
 
-  document.getElementById("t1-reset").onclick = async () => {
+  document.getElementById("t2-reset").onclick = async () => {
     const ok = await confirmDialog("Clear all scores and comments?", "Reset Form");
-    if (ok) renderTool1();
+    if (ok) renderTool2();
   };
 }
