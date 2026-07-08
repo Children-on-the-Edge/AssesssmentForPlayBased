@@ -215,10 +215,25 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
 .toast.success { background: #14532d; }
 .empty-state { text-align: center; color: var(--text-light); padding: 40px 20px; font-size: 13px; }
 
+.hamburger-btn { display: none; background: transparent; border: none; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; flex-shrink: 0; }
+
+#sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 55; }
+#sidebar-backdrop.open { display: block; }
+
 @media (max-width: 760px) {
-  .sidebar { width: 60px; min-width: 60px; }
-  .sidebar .logo-wrap img { width: 36px; }
-  .sidebar .nav-label { display: none; }
-  .nav-btn span.label { display: none; }
+  .hamburger-btn { display: inline-block; }
+  .topbar .tagline { display: none; }
+  .sidebar {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    bottom: 0;
+    width: 230px;
+    min-width: 230px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 60;
+  }
+  .sidebar.open { transform: translateX(0); }
   .zone-panel { display: none; }
 }
