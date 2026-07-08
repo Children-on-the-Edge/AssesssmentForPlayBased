@@ -73,6 +73,33 @@ function renderSettings() {
       DB.values.set(newData);
       toast("Dropdown values saved.", "success");
     };
+
+    body.insertAdjacentHTML("beforeend", `
+      <div class="score-card" style="max-width:640px;margin-top:16px">
+        <div class="sc-title">Share this setup with other devices</div>
+        <div class="sc-body">Generates a link that pre-fills these dropdown lists (and this device's Cloud Sync Client ID / Spreadsheet ID, if connected) on any device that opens it \u2014 useful for rolling this app out to a whole organization without everyone typing lists by hand. Save your changes above first so the link reflects them.</div>
+        <button class="btn btn-outline" id="gen-setup-link" style="margin-top:10px">Generate Setup Link</button>
+        <div id="setup-link-wrap" style="display:none;margin-top:10px">
+          <input id="setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
+          <button class="btn btn-outline" id="copy-setup-link" style="margin-top:8px">Copy Link</button>
+        </div>
+      </div>
+    `);
+    document.getElementById("gen-setup-link").onclick = () => {
+      const link = buildOrgSetupLink();
+      document.getElementById("setup-link-output").value = link;
+      document.getElementById("setup-link-wrap").style.display = "block";
+    };
+    document.getElementById("copy-setup-link")?.addEventListener("click", async () => {
+      const input = document.getElementById("setup-link-output");
+      input.select();
+      try {
+        await navigator.clipboard.writeText(input.value);
+        toast("Link copied.", "success");
+      } catch (e) {
+        toast("Couldn't copy automatically \u2014 the link is selected, copy it manually.", "error");
+      }
+    });
   }
 
   function drawSectionsTab(body, tool) {
