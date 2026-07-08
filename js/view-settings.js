@@ -225,17 +225,37 @@ function renderSettings() {
 function renderCloudSyncPage() {
   const main = document.getElementById("main");
 
+  // Best-effort guess at "https://github.com/<org>/<repo>/blob/main/CLOUD_SYNC_SETUP.md"
+  // from the current GitHub Pages URL, so this link works for any org/repo that
+  // deploys this app, not just the one it was originally built for.
+  function guessSetupGuideUrl() {
+    try {
+      const host = location.hostname; // e.g. "children-on-the-edge.github.io"
+      const org = host.split(".github.io")[0];
+      const repo = location.pathname.split("/").filter(Boolean)[0]; // first path segment
+      if (host.endsWith(".github.io") && org && repo) {
+        return `https://github.com/${org}/${repo}/blob/main/CLOUD_SYNC_SETUP.md`;
+      }
+    } catch (e) { /* fall through */ }
+    return null;
+  }
+
   function draw() {
     const clientId = SheetsSync.getClientId();
     const sheetId = SheetsSync.getSheetId();
     const connected = SheetsSync.isConnected();
     const isHttps = location.protocol === "https:";
+    const guideUrl = guessSetupGuideUrl();
 
     main.innerHTML = `
       <div class="tool-header">
         <div class="left"><button class="back-btn" id="cs-back">Back</button><h2>Cloud Sync</h2></div>
+        ${guideUrl ? `<a href="${esc(guideUrl)}" target="_blank" rel="noopener" style="color:#93c5fd;font-size:12px;text-decoration:underline">\uD83D\uDCD6 Full setup guide &amp; how this works</a>` : ""}
       </div>
       <div class="settings-body">
+        <div class="score-card" style="max-width:600px;background:#f8fafc">
+          <div class="sc-body">Cloud Sync lets multiple facilitators share assessments across devices via a Google Sheet acting as a shared ledger \u2014 fully optional, and local Backup/Restore and CSV export still work without it. ${guideUrl ? `See the <a href="${esc(guideUrl)}" target="_blank" rel="noopener">full setup guide</a> for the complete walkthrough and the reasoning behind it.` : ""}</div>
+        </div>
         ${!isHttps ? `
           <div class="score-card" style="max-width:600px;border-color:#f59e0b">
             <div class="sc-title" style="color:#92400e">This page isn't served over https</div>
