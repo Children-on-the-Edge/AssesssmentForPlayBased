@@ -257,6 +257,10 @@ function renderSidebar(activeKey) {
     <div class="divider"></div>
     <div class="nav-label">TOOLS</div>
     ${toolBtns}
+    <div class="nav-label">REPORTS</div>
+    <button class="nav-btn ${activeKey === "reports" ? "active" : ""}" data-nav="reports">
+      <span class="ico">\uD83D\uDCCA</span><span class="label">Reports</span>
+    </button>
     <div class="nav-label">SYNC</div>
     <button class="nav-btn ${activeKey === "cloudsync" ? "active" : ""}" data-nav="cloudsync">
       <span class="ico">\u2601\uFE0F</span><span class="label">Cloud Sync</span>
