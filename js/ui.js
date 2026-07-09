@@ -32,6 +32,37 @@ function confirmDialog(message, title = "Please confirm") {
   });
 }
 
+function promptPasswordModal(title, message) {
+  return new Promise((resolve) => {
+    const root = document.getElementById("modal-root");
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal-card">
+          <h3>${esc(title)}</h3>
+          <p style="font-size:13px;color:var(--text-mid);margin:0 0 6px">${esc(message)}</p>
+          <label>Password</label>
+          <input id="pp-pass" type="password" autocomplete="off" />
+          <div class="modal-error" id="pp-err"></div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" id="pp-cancel">Cancel</button>
+            <button class="btn btn-primary" id="pp-ok">Continue</button>
+          </div>
+        </div>
+      </div>`;
+    const passEl = root.querySelector("#pp-pass");
+    passEl.focus();
+    function submit() {
+      if (!passEl.value) { root.querySelector("#pp-err").textContent = "Password required."; return; }
+      const val = passEl.value;
+      root.innerHTML = "";
+      resolve(val);
+    }
+    root.querySelector("#pp-ok").onclick = submit;
+    root.querySelector("#pp-cancel").onclick = () => { root.innerHTML = ""; resolve(null); };
+    root.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  });
+}
+
 function openLoginModal() {
   return new Promise((resolve) => {
     const root = document.getElementById("modal-root");
