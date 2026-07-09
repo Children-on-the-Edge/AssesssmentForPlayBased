@@ -244,6 +244,7 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
  * Hides app chrome and navigation controls; note text in inputs/selects still prints
  * normally since browsers render current form field values in print output. */
 @media print {
+  @page { size: landscape; margin: 10mm; }
   .sidebar, .zone-panel, .topbar, #sidebar-backdrop, .settings-tabs, button {
     display: none !important;
   }
@@ -251,4 +252,7 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
   .main { overflow: visible; width: 100% !important; }
   body { overflow: visible; }
   .score-card, .records-table-wrap { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  .records-table { font-size: 10px; width: 100%; table-layout: auto; }
+  .records-table th, .records-table td { padding: 4px 5px; }
+  tr { break-inside: avoid; }
 }
