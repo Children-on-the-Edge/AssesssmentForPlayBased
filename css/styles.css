@@ -258,23 +258,3 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
   .records-table th, .records-table td { padding: 4px 5px; }
   tr { break-inside: avoid; }
 }
-
-/* Google Translate widget — suppress its default banner/highlighting so it fits
- * this app's own look instead of Google's default styling. */
-.goog-te-banner-frame { display: none !important; }
-body { top: 0 !important; }
-.goog-tooltip, .goog-tooltip:hover { display: none !important; }
-.goog-text-highlight { background: none !important; box-shadow: none !important; }
-.lang-switcher { display: inline-block; flex-shrink: 0; }
-.lang-switcher .goog-te-gadget { font-size: 0; color: transparent; }
-.lang-switcher select.goog-te-combo {
-  font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, .3);
-  background: rgba(255, 255, 255, .08);
-  color: #fff;
-}
-@media (max-width: 760px) {
-  .lang-switcher select.goog-te-combo { font-size: 10px; padding: 2px 4px; }
-}
