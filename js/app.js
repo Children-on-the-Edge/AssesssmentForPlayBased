@@ -6,6 +6,7 @@ const App = (() => {
   function navigate(key, arg) {
     current = key;
     renderSidebar(key);
+    renderCloudStatusIcon();
     if (key === "dashboard") renderDashboard();
     else if (key === "tool1") renderTool1(arg);
     else if (key === "tool2") renderTool2(arg);
@@ -27,7 +28,7 @@ const App = (() => {
   }
 
   async function ensureAdminCredentials() {
-    if (DB.auth.hasCredentials()) return;
+    if (DB.auth.hasCredentials()) return; // either already set up, or a setup link just supplied real credentials
     const password = generateRandomPassword();
     await DB.auth.setCredentials("admin", password);
     showInitialCredentialsModal("admin", password);
@@ -38,10 +39,12 @@ const App = (() => {
     if (applyOrgSetupLinkIfPresent()) {
       toast("Organization setup applied to this device.", "success");
     }
-    await ensureAdminCredentials();
+    await ensureAdminCredentials(); // only generates+shows a password if still needed after the above
     renderZonePanel();
     navigate("dashboard");
 
+    // Mobile hamburger menu: slides the sidebar in as an overlay with a dimmed backdrop.
+    // Only relevant below the 760px breakpoint (see styles.css) — harmless no-op above it.
     const hamburgerBtn = document.getElementById("hamburger-btn");
     const backdrop = document.getElementById("sidebar-backdrop");
     const sidebar = document.getElementById("sidebar");
@@ -60,7 +63,7 @@ const App = (() => {
       });
     }
     if (backdrop) backdrop.addEventListener("click", closeMobileMenu);
-    window.closeMobileMenu = closeMobileMenu;
+    window.closeMobileMenu = closeMobileMenu; // so renderSidebar can close the drawer after navigating
 
     if ("serviceWorker" in navigator) {
       try { await navigator.serviceWorker.register("sw.js"); } catch (e) { console.warn("SW registration failed", e); }
