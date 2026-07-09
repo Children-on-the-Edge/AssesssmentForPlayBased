@@ -238,3 +238,17 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
   .sidebar.open { transform: translateX(0); }
   .zone-panel { display: none; }
 }
+
+/* Print / "Download PDF" support — used by the Action Plan's Download PDF button
+ * (window.print(), letting the person "Save as PDF" from the browser's print dialog).
+ * Hides app chrome and navigation controls; note text in inputs/selects still prints
+ * normally since browsers render current form field values in print output. */
+@media print {
+  .sidebar, .zone-panel, .topbar, #sidebar-backdrop, .settings-tabs, button {
+    display: none !important;
+  }
+  .body-row { display: block; }
+  .main { overflow: visible; width: 100% !important; }
+  body { overflow: visible; }
+  .score-card, .records-table-wrap { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+}
