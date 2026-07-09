@@ -58,7 +58,7 @@ function renderReportsPage() {
     tab: "charts",
     charts: { zone: "All", setting: "All", facilitator: "All", assessor: "All", gender: "All", compareBy: "zone", compareSelected: null },
     comparisons: { tool: "tool1", year: "All" },
-    actionplan: { groupBy: "setting", selectedGroup: null }
+    actionplan: { groupBy: "setting", selectedGroup: null, year: "All" }
   };
 
   function draw() {
@@ -263,17 +263,19 @@ function renderReportsPage() {
   function drawActionPlanTab(body) {
     const s = state.actionplan;
 
-    function distinctGroupNames() {
+    function distinctGroupNames(t1, t2) {
       const field = s.groupBy;
       const names = new Set();
-      for (const r of DB.tool1.all()) { const v = ((r.meta && r.meta[field]) || "").trim(); if (v) names.add(v); }
-      for (const r of DB.tool2.all()) { const v = ((r.meta && r.meta[field]) || "").trim(); if (v) names.add(v); }
+      for (const r of t1) { const v = ((r.meta && r.meta[field]) || "").trim(); if (v) names.add(v); }
+      for (const r of t2) { const v = ((r.meta && r.meta[field]) || "").trim(); if (v) names.add(v); }
       return Array.from(names).sort();
     }
 
-    const names = distinctGroupNames();
+    const allYearsSeen = Array.from(new Set([...DB.tool1.all(), ...DB.tool2.all()].map(recordYear))).sort();
+    const t1All = (s.year === "All" ? DB.tool1.all() : DB.tool1.all().filter(r => recordYear(r) === s.year));
+    const t2All = (s.year === "All" ? DB.tool2.all() : DB.tool2.all().filter(r => recordYear(r) === s.year));
+    const names = distinctGroupNames(t1All, t2All);
     if (!s.selectedGroup || !names.includes(s.selectedGroup)) s.selectedGroup = names[0] || null;
-    const t1All = DB.tool1.all(), t2All = DB.tool2.all();
 
     const rowsHtml = names.map(name => {
       const t1recs = t1All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === name);
@@ -283,14 +285,14 @@ function renderReportsPage() {
       return `
         <tr>
           <td rowspan="2" style="font-weight:700;vertical-align:top;padding-top:10px;border-bottom:1px solid #f1f5f9">${esc(name)}</td>
-          <td style="background:#eafbea">${esc(joinOrNoMatches(t1gw.goingWell))}</td>
-          <td style="background:#eafbea">${esc(joinOrNoMatches(t2gw.goingWell))}</td>
-          <td style="font-weight:700;color:var(--green)">Going well</td>
+          <td style="background:#eafbea;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t1gw.goingWell))}</td>
+          <td style="background:#eafbea;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t2gw.goingWell))}</td>
+          <td style="font-weight:700;color:var(--green);white-space:nowrap">Going well</td>
         </tr>
         <tr>
-          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9">${esc(joinOrNoMatches(t1gw.needsAddressing))}</td>
-          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9">${esc(joinOrNoMatches(t2gw.needsAddressing))}</td>
-          <td style="font-weight:700;color:var(--red);border-bottom:1px solid #f1f5f9">Needs Addressing</td>
+          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t1gw.needsAddressing))}</td>
+          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t2gw.needsAddressing))}</td>
+          <td style="font-weight:700;color:var(--red);border-bottom:1px solid #f1f5f9;white-space:nowrap">Needs Addressing</td>
         </tr>
       `;
     }).join("");
@@ -305,9 +307,16 @@ function renderReportsPage() {
     body.innerHTML = `
       <div style="padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-          <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
-            <button data-ap-groupby="setting" class="small-btn" style="border:none;background:${s.groupBy === "setting" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
-            <button data-ap-groupby="zone" class="small-btn" style="border:none;background:${s.groupBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
+              <button data-ap-groupby="setting" class="small-btn" style="border:none;background:${s.groupBy === "setting" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
+              <button data-ap-groupby="zone" class="small-btn" style="border:none;background:${s.groupBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+            </div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-mid)">Year:</label>
+            <select id="ap-year">
+              <option value="All" ${s.year === "All" ? "selected" : ""}>All</option>
+              ${allYearsSeen.map(y => `<option value="${esc(y)}" ${y === s.year ? "selected" : ""}>${esc(y)}</option>`).join("")}
+            </select>
           </div>
           <button class="btn btn-outline" id="ap-download-pdf">\u2B07 Download PDF</button>
         </div>
@@ -357,6 +366,11 @@ function renderReportsPage() {
     `;
 
     document.getElementById("ap-download-pdf").onclick = () => window.print();
+    document.getElementById("ap-year").addEventListener("change", (e) => {
+      s.year = e.target.value;
+      s.selectedGroup = null;
+      drawActionPlanTab(body);
+    });
 
     body.querySelectorAll("[data-ap-groupby]").forEach(btn => {
       btn.addEventListener("click", () => { s.groupBy = btn.dataset.apGroupby; s.selectedGroup = null; drawActionPlanTab(body); });
