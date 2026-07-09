@@ -116,9 +116,10 @@ function renderSettings() {
           <button class="btn btn-outline" id="download-template">Download Blank Template</button>
           <button class="btn btn-outline" id="export-current-csv">Export Current Setup as CSV</button>
           <input type="file" id="orgsetup-csv-file" accept=".csv" />
+          <button class="btn btn-outline" id="apply-csv-now">Apply to This Device Now</button>
           <button class="btn btn-primary" id="gen-setup-link-csv">Generate Link from CSV</button>
         </div>
-        <div style="font-size:11px;color:var(--text-light);margin-top:6px">"Export Current Setup" is the easiest starting point if you just want to add more Zones/Settings/etc. to what's already here \u2014 it downloads the real current list (plus this device's Cloud Sync config and admin login, safely as a hash) ready to bulk-edit and re-upload.</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:6px">"Export Current Setup" is the easiest starting point if you just want to add more Zones/Settings/etc. to what's already here \u2014 it downloads the real current list (plus this device's Cloud Sync config and admin login, safely as a hash) ready to bulk-edit and re-upload. Use "Apply to This Device Now" to update <em>this</em> device directly from the edited CSV; use "Generate Link from CSV" to build a link for <em>other</em> devices.</div>
         <div id="csv-setup-summary" style="margin-top:10px;font-size:12px;color:var(--text-mid)"></div>
         <div id="csv-setup-link-wrap" style="display:none;margin-top:10px">
           <input id="csv-setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
@@ -142,6 +143,23 @@ function renderSettings() {
     document.getElementById("export-current-csv").onclick = () => {
       DB.downloadText("org_setup_export.csv", buildOrgSetupCSVFromCurrentDevice());
       toast("Exported. Edit and re-upload it to bulk-add more values.", "success");
+    };
+
+    document.getElementById("apply-csv-now").onclick = async () => {
+      const fileEl = document.getElementById("orgsetup-csv-file");
+      const file = fileEl.files[0];
+      if (!file) { toast("Choose a CSV file first.", "error"); return; }
+      try {
+        const text = await file.text();
+        const rows = DB.parseCSV(text);
+        const payload = await buildOrgSetupPayloadFromCSVRows(rows);
+        applyOrgSetupPayload(payload);
+        toast(`Applied to this device: ${summarizeOrgSetupPayload(payload)}`, "success");
+        draw(); // re-render this tab so Dropdown Values etc. reflect the update immediately
+      } catch (e) {
+        console.error(e);
+        toast("Could not read that CSV file.", "error");
+      }
     };
 
     document.getElementById("gen-setup-link-csv").onclick = async () => {
@@ -251,6 +269,15 @@ function renderSettings() {
           <button class="btn btn-grey" id="restore-replace">Replace all data</button>
         </div>
       </div>
+
+      <div class="score-card" style="max-width:520px;margin-top:12px;border-color:#fecaca">
+        <div class="sc-title" style="color:#b91c1c">Danger Zone</div>
+        <div class="sc-body">Permanently deletes assessment records on this device. This cannot be undone \u2014 take a backup first if there's any chance you'll want this data again. Dropdown values, section definitions, and Cloud Sync settings are untouched.</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="clear-tool1" style="background:#fecaca;color:#7f1d1d">Clear All Tool 1 Records</button>
+          <button class="btn" id="clear-tool2" style="background:#fecaca;color:#7f1d1d">Clear All Tool 2 Records</button>
+        </div>
+      </div>
     `;
     document.getElementById("backup-btn").onclick = async () => {
       const password = await promptPasswordModal("Confirm Password", "Enter your Settings password to encrypt this backup.");
@@ -287,6 +314,31 @@ function renderSettings() {
     }
     document.getElementById("restore-merge").onclick = () => doRestore("merge");
     document.getElementById("restore-replace").onclick = () => doRestore("replace");
+
+    document.getElementById("clear-tool1").onclick = async () => {
+      const count = DB.tool1.all().length;
+      if (!count) { toast("There are no Tool 1 records to clear.", "error"); return; }
+      const ok = await confirmDialog(
+        `This will permanently delete all ${count} Child Development Tool record${count !== 1 ? "s" : ""} on this device. This cannot be undone. Continue?`,
+        "Clear All Tool 1 Records"
+      );
+      if (!ok) return;
+      DB.tool1.clearAll();
+      toast(`${count} Tool 1 record${count !== 1 ? "s" : ""} deleted.`, "success");
+      renderZonePanel();
+    };
+
+    document.getElementById("clear-tool2").onclick = async () => {
+      const count = DB.tool2.all().length;
+      if (!count) { toast("There are no Tool 2 records to clear.", "error"); return; }
+      const ok = await confirmDialog(
+        `This will permanently delete all ${count} Environmental Tool record${count !== 1 ? "s" : ""} on this device. This cannot be undone. Continue?`,
+        "Clear All Tool 2 Records"
+      );
+      if (!ok) return;
+      DB.tool2.clearAll();
+      toast(`${count} Tool 2 record${count !== 1 ? "s" : ""} deleted.`, "success");
+    };
   }
 
   function drawSecurityTab(body) {
@@ -418,6 +470,7 @@ function renderCloudSyncPage() {
         await SheetsSync.createNewSheet("PPAT Shared Data");
         status.textContent = "New spreadsheet created and linked.";
         toast("New shared spreadsheet created.", "success");
+        renderCloudStatusIcon();
         draw();
       } catch (e) {
         status.textContent = "Error: " + e.message;
@@ -430,6 +483,7 @@ function renderCloudSyncPage() {
         await SheetsSync.connect("consent");
         status.textContent = "Connected.";
         toast("Connected to Google.", "success");
+        renderCloudStatusIcon();
         draw();
       } catch (e) {
         status.textContent = "Error: " + e.message;
@@ -438,6 +492,7 @@ function renderCloudSyncPage() {
     document.getElementById("cs-disconnect").onclick = () => {
       SheetsSync.disconnect();
       toast("Disconnected.");
+      renderCloudStatusIcon();
       draw();
     };
     async function pull(tool, label) {
