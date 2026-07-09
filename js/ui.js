@@ -32,6 +32,52 @@ function confirmDialog(message, title = "Please confirm") {
   });
 }
 
+function generateRandomPassword(length = 10) {
+  // Avoids visually ambiguous characters (0/O, 1/l/I) since this gets read off a
+  // screen and typed back in by hand.
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => chars[b % chars.length]).join("");
+}
+
+// Shown once, on a brand-new device that has no admin credentials yet (no setup
+// link supplied any). Deliberately has no backdrop-click-to-dismiss and no Cancel
+// button — losing this password with nothing written down would lock Settings out
+// entirely, so the person must explicitly confirm they've saved it.
+function showInitialCredentialsModal(username, password) {
+  const root = document.getElementById("modal-root");
+  root.innerHTML = `
+    <div class="overlay">
+      <div class="modal-card" style="width:380px">
+        <h3>Your Settings Login</h3>
+        <p style="font-size:13px;color:var(--text-mid);margin:0 0 10px">
+          This device hasn't been set up with an organization's login yet, so a
+          one-time password was generated. Write it down now \u2014 it will not be
+          shown again. You can change it any time in Settings &rarr; Security, or
+          it will be replaced automatically if an org setup link is opened later.
+        </p>
+        <div style="background:#f8fafc;border:1px solid var(--card-border);border-radius:8px;padding:10px;font-size:13px;margin-bottom:10px">
+          <div><strong>Username:</strong> ${esc(username)}</div>
+          <div><strong>Password:</strong> <span style="font-family:monospace">${esc(password)}</span></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="ic-copy">Copy</button>
+          <button class="btn btn-primary" id="ic-ok">I've saved this</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("ic-copy").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(`Username: ${username}\nPassword: ${password}`);
+      toast("Copied to clipboard.", "success");
+    } catch (e) {
+      toast("Couldn't copy automatically \u2014 note it down manually.", "error");
+    }
+  };
+  document.getElementById("ic-ok").onclick = () => { root.innerHTML = ""; };
+}
+
 function promptPasswordModal(title, message) {
   return new Promise((resolve) => {
     const root = document.getElementById("modal-root");
