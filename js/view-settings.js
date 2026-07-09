@@ -172,12 +172,12 @@ function renderSettings() {
     body.innerHTML = `
       <div class="score-card" style="max-width:520px">
         <div class="sc-title">Backup all data</div>
-        <div class="sc-body">Download every assessment, dropdown value, and section definition on this device as one JSON file.</div>
+        <div class="sc-body">Download every assessment, dropdown value, and section definition on this device as one password-protected, encrypted JSON file. You'll be asked for your Settings password \u2014 it's used to encrypt the file and to restore it later, so remember which password was current when you made each backup.</div>
         <button class="btn btn-primary" id="backup-btn" style="margin-top:10px">Download Backup</button>
       </div>
       <div class="score-card" style="max-width:520px;margin-top:12px">
         <div class="sc-title">Restore from backup</div>
-        <div class="sc-body">Load a previously exported JSON backup file into this device.</div>
+        <div class="sc-body">Load a previously exported backup file into this device. You'll be asked for the password it was created with (older, pre-encryption backup files will restore without a password).</div>
         <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
           <input type="file" id="restore-file" accept="application/json" />
         </div>
@@ -187,7 +187,14 @@ function renderSettings() {
         </div>
       </div>
     `;
-    document.getElementById("backup-btn").onclick = () => { DB.backupAll(); toast("Backup downloaded.", "success"); };
+    document.getElementById("backup-btn").onclick = async () => {
+      const password = await promptPasswordModal("Confirm Password", "Enter your Settings password to encrypt this backup.");
+      if (!password) return;
+      const ok = await DB.auth.checkPasswordOnly(password);
+      if (!ok) { toast("Incorrect password.", "error"); return; }
+      await DB.backupAll(password);
+      toast("Encrypted backup downloaded.", "success");
+    };
     async function doRestore(mode) {
       const fileEl = document.getElementById("restore-file");
       const file = fileEl.files[0];
@@ -196,14 +203,21 @@ function renderSettings() {
         const ok = await confirmDialog("This will replace ALL assessments on this device with the backup contents. Continue?", "Replace All Data");
         if (!ok) return;
       }
+      let looksEncrypted = false;
       try {
         const text = await file.text();
-        const payload = JSON.parse(text);
-        DB.restoreAll(payload, mode);
+        looksEncrypted = /"ciphertext"\s*:/.test(text);
+        let password = null;
+        if (looksEncrypted) {
+          password = await promptPasswordModal("Backup Password", "Enter the password this backup file was created with.");
+          if (!password) return;
+        }
+        await DB.restoreFromFile(text, mode, password);
         toast("Backup restored.", "success");
         renderZonePanel();
       } catch (e) {
-        toast("Could not read that backup file.", "error");
+        console.error(e);
+        toast(looksEncrypted ? "Incorrect password, or the file is corrupted." : "Could not read that backup file.", "error");
       }
     }
     document.getElementById("restore-merge").onclick = () => doRestore("merge");
