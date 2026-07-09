@@ -14,6 +14,7 @@ function renderSettings() {
         <button class="settings-tab" data-tab="tool1sections">Tool 1 Sections</button>
         <button class="settings-tab" data-tab="tool2sections">Tool 2 Sections</button>
         <button class="settings-tab" data-tab="backup">Backup &amp; Restore</button>
+        <button class="settings-tab" data-tab="orgsetup">Org Setup</button>
         <button class="settings-tab" data-tab="security">Security</button>
       </div>
       <div class="settings-body" id="st-body"></div>
@@ -28,6 +29,7 @@ function renderSettings() {
     else if (state.tab === "tool1sections") drawSectionsTab(body, "tool1");
     else if (state.tab === "tool2sections") drawSectionsTab(body, "tool2");
     else if (state.tab === "backup") drawBackupTab(body);
+    else if (state.tab === "orgsetup") drawOrgSetupTab(body);
     else if (state.tab === "security") drawSecurityTab(body);
   }
 
@@ -73,25 +75,13 @@ function renderSettings() {
       DB.values.set(newData);
       toast("Dropdown values saved.", "success");
     };
+  }
 
-    body.insertAdjacentHTML("beforeend", `
-      <div class="score-card" style="max-width:640px;margin-top:16px">
-        <div class="sc-title">Share this setup with other devices</div>
-        <div class="sc-body">Generates a link that pre-fills these dropdown lists (and this device's Cloud Sync Client ID / Spreadsheet ID, if connected) on any device that opens it \u2014 useful for rolling this app out to a whole organization without everyone typing lists by hand. Save your changes above first so the link reflects them.</div>
-        <button class="btn btn-outline" id="gen-setup-link" style="margin-top:10px">Generate Setup Link</button>
-        <div id="setup-link-wrap" style="display:none;margin-top:10px">
-          <input id="setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
-          <button class="btn btn-outline" id="copy-setup-link" style="margin-top:8px">Copy Link</button>
-        </div>
-      </div>
-    `);
-    document.getElementById("gen-setup-link").onclick = () => {
-      const link = buildOrgSetupLink();
-      document.getElementById("setup-link-output").value = link;
-      document.getElementById("setup-link-wrap").style.display = "block";
-    };
-    document.getElementById("copy-setup-link")?.addEventListener("click", async () => {
-      const input = document.getElementById("setup-link-output");
+  function wireCopyLinkButton(btnId, inputId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      const input = document.getElementById(inputId);
       input.select();
       try {
         await navigator.clipboard.writeText(input.value);
@@ -100,6 +90,72 @@ function renderSettings() {
         toast("Couldn't copy automatically \u2014 the link is selected, copy it manually.", "error");
       }
     });
+  }
+
+  function drawOrgSetupTab(body) {
+    body.innerHTML = `
+      <div class="score-card" style="max-width:640px">
+        <div class="sc-title">Option A \u2014 Generate from this device's current settings</div>
+        <div class="sc-body">Uses whatever's currently saved in Dropdown Values (and this device's Cloud Sync Client ID / Spreadsheet ID, if connected). Doesn't include admin login credentials.</div>
+        <button class="btn btn-outline" id="gen-setup-link" style="margin-top:10px">Generate Setup Link</button>
+        <div id="setup-link-wrap" style="display:none;margin-top:10px">
+          <input id="setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
+          <button class="btn btn-outline" id="copy-setup-link" style="margin-top:8px">Copy Link</button>
+        </div>
+      </div>
+
+      <div class="score-card" style="max-width:640px;margin-top:16px">
+        <div class="sc-title">Option B \u2014 Generate from a CSV / Google Sheet export</div>
+        <div class="sc-body">
+          Upload a two-column <code>Field, Value</code> CSV (export a Google Sheet as CSV, or edit one directly). Repeat the field name on multiple rows for each Zone/Setting/Facilitator/Assessor; use one row each for the singular fields. Recognized field names: <code>Zone</code>, <code>Setting</code>, <code>Facilitator</code>, <code>Assessor</code>, <code>ClientID</code>, <code>SheetID</code>, <code>AdminUsername</code>, <code>AdminPassword</code>.
+          <br/><br/>
+          The password is hashed in your browser before the link is built \u2014 the link itself never contains a readable password, only the same kind of one-way hash the login screen already uses.
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" id="download-template">Download CSV Template</button>
+          <input type="file" id="orgsetup-csv-file" accept=".csv" />
+          <button class="btn btn-primary" id="gen-setup-link-csv">Generate Link from CSV</button>
+        </div>
+        <div id="csv-setup-summary" style="margin-top:10px;font-size:12px;color:var(--text-mid)"></div>
+        <div id="csv-setup-link-wrap" style="display:none;margin-top:10px">
+          <input id="csv-setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
+          <button class="btn btn-outline" id="copy-csv-setup-link" style="margin-top:8px">Copy Link</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("gen-setup-link").onclick = () => {
+      const link = buildOrgSetupLink();
+      document.getElementById("setup-link-output").value = link;
+      document.getElementById("setup-link-wrap").style.display = "block";
+    };
+    wireCopyLinkButton("copy-setup-link", "setup-link-output");
+
+    document.getElementById("download-template").onclick = () => {
+      DB.downloadText("org_setup_template.csv", ORG_SETUP_CSV_TEMPLATE);
+    };
+
+    document.getElementById("gen-setup-link-csv").onclick = async () => {
+      const fileEl = document.getElementById("orgsetup-csv-file");
+      const file = fileEl.files[0];
+      const summaryEl = document.getElementById("csv-setup-summary");
+      if (!file) { toast("Choose a CSV file first.", "error"); return; }
+      try {
+        const text = await file.text();
+        const rows = DB.parseCSV(text);
+        const payload = await buildOrgSetupPayloadFromCSVRows(rows);
+        const link = encodeOrgSetupPayload(payload);
+        summaryEl.textContent = summarizeOrgSetupPayload(payload);
+        document.getElementById("csv-setup-link-output").value = link;
+        document.getElementById("csv-setup-link-wrap").style.display = "block";
+        toast("Setup link generated from CSV.", "success");
+      } catch (e) {
+        console.error(e);
+        summaryEl.textContent = "";
+        toast("Could not read that CSV file.", "error");
+      }
+    };
+    wireCopyLinkButton("copy-csv-setup-link", "csv-setup-link-output");
   }
 
   function drawSectionsTab(body, tool) {
