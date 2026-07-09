@@ -32,6 +32,29 @@ function confirmDialog(message, title = "Please confirm") {
   });
 }
 
+// Shows nothing if Cloud Sync was never set up on this device (the common case),
+// a muted "cloud-off" icon if it's configured but not currently signed in, or a
+// green cloud when actively connected. Clicking it jumps to the Cloud Sync page.
+function renderCloudStatusIcon() {
+  const el = document.getElementById("cloud-status-icon");
+  if (!el) return;
+  if (!window.SheetsSync || !SheetsSync.isConfigured()) {
+    el.innerHTML = "";
+    return;
+  }
+  const connected = SheetsSync.isConnected();
+  const color = connected ? "#4ade80" : "#94a3b8";
+  const slash = connected ? "" : `<line x1="2" y1="2" x2="22" y2="22"></line>`;
+  el.title = connected ? "Cloud Sync connected \u2014 click to open" : "Cloud Sync not connected \u2014 click to open";
+  el.style.cursor = "pointer";
+  el.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+      ${slash}
+    </svg>`;
+  el.onclick = () => { if (window.App) window.App.navigate("cloudsync"); };
+}
+
 function generateRandomPassword(length = 10) {
   // Avoids visually ambiguous characters (0/O, 1/l/I) since this gets read off a
   // screen and typed back in by hand.
