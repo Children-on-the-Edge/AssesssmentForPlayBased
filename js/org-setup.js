@@ -24,6 +24,10 @@ function buildOrgSetupLink() {
       sheetId: (window.SheetsSync && SheetsSync.getSheetId()) || ""
     }
   };
+  return encodeOrgSetupPayload(payload);
+}
+
+function encodeOrgSetupPayload(payload) {
   const encoded = b64EncodeUnicode(JSON.stringify(payload));
   const url = new URL(location.href);
   url.search = "";
@@ -31,6 +35,72 @@ function buildOrgSetupLink() {
   url.searchParams.set("setup", encoded);
   return url.toString();
 }
+
+// Parses a "Field,Value" CSV/Sheet export: repeat the field name on multiple rows
+// for list-type fields (Zone/Setting/Facilitator/Assessor), one row for singular
+// fields (ClientID/SheetID/AdminUsername/AdminPassword). Unrecognized field labels
+// are silently ignored, so extra notes/columns in someone's working sheet are harmless.
+function parseOrgSetupCSVRows(rows) {
+  const values = { Zone: [], Setting: [], Facilitator: [], Assessor: [] };
+  const single = {};
+  for (const row of rows) {
+    if (!row.length) continue;
+    const rawField = (row[0] || "").trim();
+    const value = (row[1] || "").trim();
+    if (!rawField || !value) continue;
+    const key = rawField.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (key === "zone" || key === "zones") values.Zone.push(value);
+    else if (key === "setting" || key === "settings") values.Setting.push(value);
+    else if (key === "facilitator" || key === "facilitators") values.Facilitator.push(value);
+    else if (key === "assessor" || key === "assessors") values.Assessor.push(value);
+    else if (key === "clientid") single.clientId = value;
+    else if (key === "sheetid" || key === "spreadsheetid") single.sheetId = value;
+    else if (key === "adminusername" || key === "username") single.adminUsername = value;
+    else if (key === "adminpassword" || key === "password") single.adminPassword = value;
+  }
+  return { values, single };
+}
+
+// Hashes the CSV-supplied password before it ever becomes part of a shareable link —
+// the link only ever carries the same one-way hash the login screen already uses,
+// never the plaintext password itself.
+async function buildOrgSetupPayloadFromCSVRows(rows) {
+  const { values, single } = parseOrgSetupCSVRows(rows);
+  const payload = { values };
+  if (single.clientId || single.sheetId) {
+    payload.sync = { clientId: single.clientId || "", sheetId: single.sheetId || "" };
+  }
+  if (single.adminUsername && single.adminPassword) {
+    payload.auth = { username: single.adminUsername, passwordHash: await DB.sha256(single.adminPassword) };
+  }
+  return payload;
+}
+
+function summarizeOrgSetupPayload(payload) {
+  const v = payload.values || {};
+  const parts = [
+    `${(v.Zone || []).length} Zone(s)`,
+    `${(v.Setting || []).length} Setting(s)`,
+    `${(v.Facilitator || []).length} Facilitator(s)`,
+    `${(v.Assessor || []).length} Assessor(s)`,
+    (payload.sync && (payload.sync.clientId || payload.sync.sheetId)) ? "Cloud Sync: included" : "Cloud Sync: not included",
+    payload.auth ? "Admin login: included" : "Admin login: not included"
+  ];
+  return parts.join(" \u00b7 ");
+}
+
+const ORG_SETUP_CSV_TEMPLATE = `Field,Value
+Zone,Example Zone 1
+Zone,Example Zone 2
+Setting,Example Setting 1
+Setting,Example Setting 2
+Facilitator,Example Facilitator Name
+Assessor,Example Assessor Name
+ClientID,paste-your-google-oauth-client-id-here
+SheetID,paste-your-google-sheet-id-here
+AdminUsername,orgadmin
+AdminPassword,ChooseAStrongPassword123
+`;
 
 // Returns true if a setup link was found and applied, so app.js can show a toast.
 function applyOrgSetupLinkIfPresent() {
@@ -43,6 +113,9 @@ function applyOrgSetupLinkIfPresent() {
     if (payload.sync && window.SheetsSync) {
       if (payload.sync.clientId) SheetsSync.setClientId(payload.sync.clientId);
       if (payload.sync.sheetId) SheetsSync.setSheetId(payload.sync.sheetId);
+    }
+    if (payload.auth && payload.auth.username && payload.auth.passwordHash) {
+      DB.auth.setCredentialsHashed(payload.auth.username, payload.auth.passwordHash);
     }
     // Tidy the setup param out of the visible address bar afterward — the app
     // has already absorbed it into local storage, no need to keep showing it.
