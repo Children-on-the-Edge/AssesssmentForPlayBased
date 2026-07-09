@@ -200,11 +200,15 @@ const DEFAULT_TOOL2_SECTIONS = {
   }
 };
 
+// Blank on purpose: a brand-new device/browser with no org setup link applied
+// yet starts with empty dropdown lists, not Children on the Edge's own data.
+// This only affects devices that have NEVER initialized before (see DB.init())
+// — anything already using the app keeps whatever it already has.
 const DEFAULT_VALUES = {
-  Setting: ["Kimbiliyo", "Salaama", "Unity", "Union 1", "Union 2", "Little Stars 1", "Little Stars 2", "Mountain"],
-  Zone: ["Buliti", "Bukere", "Itambabiniga", "Kaboni", "Bujubli"],
-  Facilitator: ["Masika Silwamughuma Bernadette", "Rehema Nishimwe", "Mugenyi Cecille", "Asifiwe Aranda", "Sehinda Console", "Ainebyona Apophia", "Akankunda Claire", "Musemeza Patrick"],
-  Assessor: ["Lucien Niyogusa Bisonga", "Christian Africa Niyosaba", "Richard Mutabazi", "Habert Eliya", "Kato Godwin", "Methodius Frank Ukwishaka", "Alikiba Mustafa"]
+  Setting: [],
+  Zone: [],
+  Facilitator: [],
+  Assessor: []
 };
 
 const SECTION_LABELS = {
@@ -237,7 +241,7 @@ const TOOL2_SCORE_COLORS = {
   No: { bg: "#fecaca", fg: "#7f1d1d" }
 };
 
-// Default settings-login credentials (changeable in Settings > Security).
-// Stored as SHA-256 hashes locally, never as plaintext.
-const DEFAULT_ADMIN_USERNAME = "Coteadmin";
-const DEFAULT_ADMIN_PASSWORD = "cote43*31!";
+// Default settings-login credentials used to live here as a fixed, public value —
+// removed on purpose. A brand-new device now gets a randomly generated password
+// on first launch instead (see app.js's ensureAdminCredentials), shown once so it
+// can be noted down, unless an org setup link already supplied real credentials.
