@@ -139,6 +139,21 @@ function buildOrgSetupCSVFromCurrentDevice() {
   return DB.toCSVRows(rows);
 }
 
+// Writes a setup payload's values/sync/auth directly into this device's local
+// storage. Shared by the URL-based flow (applyOrgSetupLinkIfPresent) and the
+// "Apply to This Device Now" button, which skips the link/reload round trip
+// entirely when you're already sitting at the device you want to update.
+function applyOrgSetupPayload(payload) {
+  if (payload.values) DB.values.set(payload.values);
+  if (payload.sync && window.SheetsSync) {
+    if (payload.sync.clientId) SheetsSync.setClientId(payload.sync.clientId);
+    if (payload.sync.sheetId) SheetsSync.setSheetId(payload.sync.sheetId);
+  }
+  if (payload.auth && payload.auth.username && payload.auth.passwordHash) {
+    DB.auth.setCredentialsHashed(payload.auth.username, payload.auth.passwordHash);
+  }
+}
+
 // Returns true if a setup link was found and applied, so app.js can show a toast.
 function applyOrgSetupLinkIfPresent() {
   const params = new URLSearchParams(location.search);
@@ -146,14 +161,7 @@ function applyOrgSetupLinkIfPresent() {
   if (!encoded) return false;
   try {
     const payload = JSON.parse(b64DecodeUnicode(encoded));
-    if (payload.values) DB.values.set(payload.values);
-    if (payload.sync && window.SheetsSync) {
-      if (payload.sync.clientId) SheetsSync.setClientId(payload.sync.clientId);
-      if (payload.sync.sheetId) SheetsSync.setSheetId(payload.sync.sheetId);
-    }
-    if (payload.auth && payload.auth.username && payload.auth.passwordHash) {
-      DB.auth.setCredentialsHashed(payload.auth.username, payload.auth.passwordHash);
-    }
+    applyOrgSetupPayload(payload);
     // Tidy the setup param out of the visible address bar afterward — the app
     // has already absorbed it into local storage, no need to keep showing it.
     params.delete("setup");
