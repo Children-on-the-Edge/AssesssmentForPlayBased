@@ -20,7 +20,8 @@ const SheetsSync = (() => {
   const LS_CLIENT_ID = "pp_sync_client_id";
   const LS_SHEET_ID = "pp_sync_sheet_id";
   const SS_TOKEN = "pp_sync_token";       // sessionStorage: { token, expiresAt }
-  const SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+  const SS_GIVEN_NAME = "pp_sync_given_name"; // sessionStorage: person's first name, if Google shared it
+  const SCOPE = "https://www.googleapis.com/auth/spreadsheets profile";
 
   const SHEET_TITLES = { tool1: "Tool1", tool2: "Tool2" };
   const META_COLS = {
@@ -39,6 +40,7 @@ const SheetsSync = (() => {
     localStorage.removeItem(LS_CLIENT_ID);
     localStorage.removeItem(LS_SHEET_ID);
     sessionStorage.removeItem(SS_TOKEN);
+    sessionStorage.removeItem(SS_GIVEN_NAME);
     tokenClient = null;
     headerCache = {};
   }
@@ -85,6 +87,7 @@ const SheetsSync = (() => {
       client.callback = (resp) => {
         if (resp.error) { reject(new Error(resp.error)); return; }
         storeToken(resp.access_token, resp.expires_in || 3500);
+        fetchAndStoreGivenName(resp.access_token); // best-effort, never blocks the main sign-in
         resolve(resp.access_token);
       };
       client.requestAccessToken({ prompt: promptMode === undefined ? "" : promptMode });
@@ -94,9 +97,28 @@ const SheetsSync = (() => {
   function disconnect() {
     const token = getStoredToken();
     sessionStorage.removeItem(SS_TOKEN);
+    sessionStorage.removeItem(SS_GIVEN_NAME);
     if (token && window.google && google.accounts && google.accounts.oauth2) {
       try { google.accounts.oauth2.revoke(token, () => {}); } catch (e) { /* ignore */ }
     }
+  }
+
+  // Best-effort only — a missing first name just means the dashboard shows a
+  // generic "Welcome back" instead of a personalized one. Never surfaces an
+  // error, never blocks anything else in the app.
+  async function fetchAndStoreGivenName(token) {
+    try {
+      const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const profile = await res.json();
+      if (profile.given_name) sessionStorage.setItem(SS_GIVEN_NAME, profile.given_name);
+    } catch (e) { /* ignore — purely a nice-to-have */ }
+  }
+
+  function getGivenName() {
+    return sessionStorage.getItem(SS_GIVEN_NAME) || "";
   }
 
   async function ensureAccessToken() {
@@ -285,7 +307,7 @@ const SheetsSync = (() => {
 
   return {
     getClientId, getSheetId, setClientId, setSheetId, clearConfig,
-    isConfigured, isConnected, connect, disconnect,
+    isConfigured, isConnected, connect, disconnect, getGivenName,
     pushRecord, pullAll, syncNow, createNewSheet
   };
 })();
