@@ -1,5 +1,5 @@
 /* sw.js — offline cache for the PPAT app shell. */
-const CACHE_NAME = "ppat-cache-v9";
+const CACHE_NAME = "ppat-cache-v11";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,6 +14,8 @@ const ASSETS = [
   "./js/view-tool1.js",
   "./js/view-tool2.js",
   "./js/view-records.js",
+  "./js/action-plan.js",
+  "./js/reports.js",
   "./js/view-settings.js",
   "./js/app.js",
   "./icons/logo-original.png",
