@@ -12,6 +12,7 @@ const DB = (() => {
     values: "pp_values",
     tool1sections: "pp_tool1_sections",
     tool2sections: "pp_tool2_sections",
+    actionPlanNotes: "pp_action_plan_notes",
     auth: "pp_auth",
     meta: "pp_meta"
   };
@@ -117,6 +118,20 @@ const DB = (() => {
   const tool2Sections = {
     get: () => _get(KEYS.tool2sections, DEFAULT_TOOL2_SECTIONS),
     set: (v) => _set(KEYS.tool2sections, v)
+  };
+
+  // Freeform Strengths/Areas for Development/Target+Actions notes per Setting or
+  // Zone group, keyed like "setting:Kimbiliyo" or "zone:Buliti" to keep the two
+  // groupings from colliding if a name were ever reused across both.
+  const actionPlanNotes = {
+    get: () => _get(KEYS.actionPlanNotes, {}),
+    set: (v) => _set(KEYS.actionPlanNotes, v),
+    getForGroup(key) { return actionPlanNotes.get()[key] || null; },
+    setForGroup(key, data) {
+      const all = actionPlanNotes.get();
+      all[key] = data;
+      actionPlanNotes.set(all);
+    }
   };
 
   // ── Assessments ─────────────────────────────────────────────────────
@@ -377,7 +392,7 @@ const DB = (() => {
   }
 
   return {
-    init, values, tool1Sections, tool2Sections, tool1, tool2, auth, sha256,
+    init, values, tool1Sections, tool2Sections, actionPlanNotes, tool1, tool2, auth, sha256,
     parseCSV, toCSVRows, tool1ToCSVRows, tool1FromCSVRows, tool2ToCSVRows, tool2FromCSVRows,
     downloadText, backupAll, restoreAll, restoreFromFile, uid
   };
