@@ -25,11 +25,19 @@ const App = (() => {
     }
   }
 
+  async function ensureAdminCredentials() {
+    if (DB.auth.hasCredentials()) return; // either already set up, or a setup link just supplied real credentials
+    const password = generateRandomPassword();
+    await DB.auth.setCredentials("admin", password);
+    showInitialCredentialsModal("admin", password);
+  }
+
   async function boot() {
     await DB.init();
     if (applyOrgSetupLinkIfPresent()) {
       toast("Organization setup applied to this device.", "success");
     }
+    await ensureAdminCredentials(); // only generates+shows a password if still needed after the above
     renderZonePanel();
     navigate("dashboard");
 
