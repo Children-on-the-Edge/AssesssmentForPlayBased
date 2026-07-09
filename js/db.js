@@ -177,6 +177,11 @@ const DB = (() => {
     },
     async setCredentials(username, password) {
       _set(KEYS.auth, { username: username.trim(), passwordHash: await sha256(password) });
+    },
+    // For setup links: the password was already hashed before being embedded in the
+    // link (see org-setup.js), so this writes it directly without re-hashing.
+    setCredentialsHashed(username, passwordHash) {
+      _set(KEYS.auth, { username: username.trim(), passwordHash });
     }
   };
 
@@ -373,7 +378,7 @@ const DB = (() => {
   }
 
   return {
-    init, values, tool1Sections, tool2Sections, tool1, tool2, auth,
+    init, values, tool1Sections, tool2Sections, tool1, tool2, auth, sha256,
     parseCSV, toCSVRows, tool1ToCSVRows, tool1FromCSVRows, tool2ToCSVRows, tool2FromCSVRows,
     downloadText, backupAll, restoreAll, restoreFromFile, uid
   };
