@@ -194,7 +194,7 @@ function renderDashboard() {
             <p>Browse child development records and view per-section averages.</p>
             <button class="go-btn">Open &rarr;</button>
           </div>
-          <div class="nav-card" style="--stripe:#6366f1" data-go="tool2records">
+          <div class="nav-card" style="--stripe:var(--logo-brown)" data-go="tool2records">
             <h4>Environmental Records</h4>
             <p>Browse saved environmental assessments by setting and zone.</p>
             <button class="go-btn">Open &rarr;</button>
