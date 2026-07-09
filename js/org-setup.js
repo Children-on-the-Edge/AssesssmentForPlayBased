@@ -67,6 +67,7 @@ function parseOrgSetupCSVRows(rows) {
     else if (key === "sheetid" || key === "spreadsheetid") single.sheetId = value;
     else if (key === "adminusername" || key === "username") single.adminUsername = value;
     else if (key === "adminpassword" || key === "password") single.adminPassword = value;
+    else if (key === "adminpasswordhash" || key === "passwordhash") single.adminPasswordHash = value;
   }
   return { values, single };
 }
@@ -80,7 +81,11 @@ async function buildOrgSetupPayloadFromCSVRows(rows) {
   if (single.clientId || single.sheetId) {
     payload.sync = { clientId: single.clientId || "", sheetId: single.sheetId || "" };
   }
-  if (single.adminUsername && single.adminPassword) {
+  if (single.adminUsername && single.adminPasswordHash) {
+    // Already a one-way hash — e.g. from an exported-current-device CSV. Used as-is,
+    // never re-hashed (hashing a hash would silently produce the wrong credentials).
+    payload.auth = { username: single.adminUsername, passwordHash: single.adminPasswordHash };
+  } else if (single.adminUsername && single.adminPassword) {
     payload.auth = { username: single.adminUsername, passwordHash: await DB.sha256(single.adminPassword) };
   }
   return payload;
@@ -111,6 +116,28 @@ SheetID,paste-your-google-sheet-id-here
 AdminUsername,orgadmin
 AdminPassword,ChooseAStrongPassword123
 `;
+
+// Exports this device's real current setup as the same Field,Value CSV format Option
+// B imports — lets someone bulk-add more Zones/Settings/etc. in a spreadsheet rather
+// than starting from the blank template. The password is exported as its existing
+// hash (AdminPasswordHash), never a readable password, since the real password was
+// never stored anywhere to begin with — only ever its one-way hash.
+function buildOrgSetupCSVFromCurrentDevice() {
+  const values = DB.values.get();
+  const rows = [["Field", "Value"]];
+  (values.Zone || []).forEach(v => rows.push(["Zone", v]));
+  (values.Setting || []).forEach(v => rows.push(["Setting", v]));
+  (values.Facilitator || []).forEach(v => rows.push(["Facilitator", v]));
+  (values.Assessor || []).forEach(v => rows.push(["Assessor", v]));
+  const clientId = (window.SheetsSync && SheetsSync.getClientId()) || "";
+  const sheetId = (window.SheetsSync && SheetsSync.getSheetId()) || "";
+  if (clientId) rows.push(["ClientID", clientId]);
+  if (sheetId) rows.push(["SheetID", sheetId]);
+  const currentAuth = DB.auth.get();
+  if (currentAuth && currentAuth.username) rows.push(["AdminUsername", currentAuth.username]);
+  if (currentAuth && currentAuth.passwordHash) rows.push(["AdminPasswordHash", currentAuth.passwordHash]);
+  return DB.toCSVRows(rows);
+}
 
 // Returns true if a setup link was found and applied, so app.js can show a toast.
 function applyOrgSetupLinkIfPresent() {
