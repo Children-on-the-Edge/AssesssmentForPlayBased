@@ -96,8 +96,9 @@ function renderSettings() {
     body.innerHTML = `
       <div class="score-card" style="max-width:640px">
         <div class="sc-title">Option A \u2014 Generate from this device's current settings</div>
-        <div class="sc-body">Uses whatever's currently saved in Dropdown Values (and this device's Cloud Sync Client ID / Spreadsheet ID, if connected). Doesn't include admin login credentials.</div>
+        <div class="sc-body">Uses whatever's currently saved in Dropdown Values, this device's Cloud Sync Client ID / Spreadsheet ID (if connected), and this device's admin login. The password is already stored here only as a one-way hash \u2014 that's exactly what gets included, never a readable password.</div>
         <button class="btn btn-outline" id="gen-setup-link" style="margin-top:10px">Generate Setup Link</button>
+        <div id="setup-summary" style="margin-top:10px;font-size:12px;color:var(--text-mid)"></div>
         <div id="setup-link-wrap" style="display:none;margin-top:10px">
           <input id="setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
           <button class="btn btn-outline" id="copy-setup-link" style="margin-top:8px">Copy Link</button>
@@ -125,7 +126,9 @@ function renderSettings() {
     `;
 
     document.getElementById("gen-setup-link").onclick = () => {
-      const link = buildOrgSetupLink();
+      const payload = buildOrgSetupPayloadFromCurrentDevice();
+      const link = encodeOrgSetupPayload(payload);
+      document.getElementById("setup-summary").textContent = summarizeOrgSetupPayload(payload);
       document.getElementById("setup-link-output").value = link;
       document.getElementById("setup-link-wrap").style.display = "block";
     };
