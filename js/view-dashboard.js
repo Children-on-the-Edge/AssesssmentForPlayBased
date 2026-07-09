@@ -22,11 +22,12 @@ function getQuickStats() {
 function renderDashboard() {
   const main = document.getElementById("main");
   const stats = getQuickStats();
+  const firstName = (window.SheetsSync && SheetsSync.getGivenName()) || "";
 
   main.innerHTML = `
     <div class="dash-pad">
       <div class="banner">
-        <h1>Welcome back</h1>
+        <h1>Welcome back${firstName ? ", " + esc(firstName) : ""}</h1>
         <p>Select a tool below to begin an assessment, or view records and reports.</p>
       </div>
 
