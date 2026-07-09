@@ -151,6 +151,9 @@ const DB = (() => {
     },
     get(id) {
       return tool1.all().find(r => r.id === id) || null;
+    },
+    clearAll() {
+      _set(KEYS.tool1, []);
     }
   };
 
@@ -170,6 +173,9 @@ const DB = (() => {
     },
     get(id) {
       return tool2.all().find(r => r.id === id) || null;
+    },
+    clearAll() {
+      _set(KEYS.tool2, []);
     }
   };
 
