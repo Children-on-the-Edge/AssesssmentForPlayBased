@@ -16,7 +16,7 @@ function b64DecodeUnicode(str) {
   return decodeURIComponent(atob(str).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join(""));
 }
 
-function buildOrgSetupLink() {
+function buildOrgSetupPayloadFromCurrentDevice() {
   const payload = {
     values: DB.values.get(),
     sync: {
@@ -24,7 +24,17 @@ function buildOrgSetupLink() {
       sheetId: (window.SheetsSync && SheetsSync.getSheetId()) || ""
     }
   };
-  return encodeOrgSetupPayload(payload);
+  // Already a one-way hash on this device (see db.js's auth object) — nothing to
+  // hash here, and the plaintext password never exists in memory at this point.
+  const currentAuth = DB.auth.get();
+  if (currentAuth && currentAuth.username && currentAuth.passwordHash) {
+    payload.auth = { username: currentAuth.username, passwordHash: currentAuth.passwordHash };
+  }
+  return payload;
+}
+
+function buildOrgSetupLink() {
+  return encodeOrgSetupPayload(buildOrgSetupPayloadFromCurrentDevice());
 }
 
 function encodeOrgSetupPayload(payload) {
