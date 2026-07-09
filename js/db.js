@@ -99,12 +99,10 @@ const DB = (() => {
     if (_get(KEYS.tool2sections, null) === null) _set(KEYS.tool2sections, DEFAULT_TOOL2_SECTIONS);
     if (_get(KEYS.tool1, null) === null) _set(KEYS.tool1, []);
     if (_get(KEYS.tool2, null) === null) _set(KEYS.tool2, []);
-    if (_get(KEYS.auth, null) === null) {
-      _set(KEYS.auth, {
-        username: DEFAULT_ADMIN_USERNAME,
-        passwordHash: await sha256(DEFAULT_ADMIN_PASSWORD)
-      });
-    }
+    // No default admin credentials seeded here anymore — a fixed password baked into
+    // public source code would be visible to anyone. See app.js's ensureAdminCredentials,
+    // which generates a random one-time password on first launch instead, but only as a
+    // fallback if an org setup link hasn't already supplied real credentials.
   }
 
   // ── Generic getters/setters ────────────────────────────────────────
@@ -163,6 +161,7 @@ const DB = (() => {
   // ── Auth ──────────────────────────────────────────────────────────
   const auth = {
     get: () => _get(KEYS.auth, null),
+    hasCredentials: () => _get(KEYS.auth, null) !== null,
     async check(username, password) {
       const a = auth.get();
       if (!a) return false;
