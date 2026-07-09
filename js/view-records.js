@@ -207,7 +207,7 @@ function renderComparisonsTab(tool, yearFilter) {
 function renderRecordsView(tool) {
   const isT1 = tool === "tool1";
   const main = document.getElementById("main");
-  const state = { search: "", age: "All", setting: "All", facilitator: "All", view: "list", compareYear: "All" };
+  const state = { search: "", age: "All", setting: "All", facilitator: "All" };
 
   function buildRows() {
     const records = isT1 ? DB.tool1.all() : DB.tool2.all();
@@ -276,14 +276,13 @@ function renderRecordsView(tool) {
 
     const syncAvailable = window.SheetsSync && SheetsSync.isConfigured();
 
-    const tabsHtml = `
-      <div class="settings-tabs" style="padding:12px 18px 0">
-        <button class="settings-tab ${state.view === "list" ? "active" : ""}" data-view="list">Records</button>
-        <button class="settings-tab ${state.view === "comparisons" ? "active" : ""}" data-view="comparisons">Comparisons</button>
+    main.innerHTML = `
+      <div class="tool-header">
+        <div class="left">
+          <button class="back-btn" id="rv-back">Back</button>
+          <h2>${isT1 ? "Child Development Records" : "Environmental Records"}</h2>
+        </div>
       </div>
-    `;
-
-    const bodyHtml = state.view === "comparisons" ? renderComparisonsTab(tool, state.compareYear) : `
       <div class="records-toolbar">
         <span class="count-label" id="rv-count"></span>
         <div style="display:flex;gap:8px">
@@ -306,28 +305,7 @@ function renderRecordsView(tool) {
       <input type="file" id="rv-file-input" accept=".csv" multiple style="display:none" />
     `;
 
-    main.innerHTML = `
-      <div class="tool-header">
-        <div class="left">
-          <button class="back-btn" id="rv-back">Back</button>
-          <h2>${isT1 ? "Child Development Records" : "Environmental Records"}</h2>
-        </div>
-      </div>
-      ${tabsHtml}
-      ${bodyHtml}
-    `;
-
     document.getElementById("rv-back").onclick = () => window.App.navigate("dashboard");
-    main.querySelectorAll("[data-view]").forEach(btn => {
-      btn.addEventListener("click", () => { state.view = btn.dataset.view; draw(); });
-    });
-
-    if (state.view !== "list") {
-      const yearSel = document.getElementById("cmp-year");
-      if (yearSel) yearSel.addEventListener("change", () => { state.compareYear = yearSel.value; draw(); });
-      return; // comparisons tab has no other controls to wire up
-    }
-
     document.getElementById("rv-count").textContent = `${filtered.length} record${filtered.length !== 1 ? "s" : ""}` + (filtered.length !== allRows.length ? ` (of ${allRows.length})` : "");
 
     const searchEl = document.getElementById("rv-search");
