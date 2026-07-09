@@ -3,17 +3,18 @@
   --navy-mid: #1e3a5f;
   --navy-light: #2d5a8e;
   --navy-hover: #3b72b0;
-  --accent: #3b82f6;
-  --accent2: #06b6d4;
+  --accent: #4a90c4;    /* logo blue bar */
+  --accent2: #9b6ba0;   /* logo purple bar */
+  --logo-brown: #96603f; /* logo brown bar \u2014 used for the 4th nav card stripe */
   --bg: #f0f4f8;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --text-dark: #0f172a;
   --text-mid: #475569;
   --text-light: #94a3b8;
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --red: #ef4444;
+  --green: #a8c93f;     /* logo lime green bar */
+  --amber: #f0982c;     /* logo orange bar */
+  --red: #ef4444;       /* kept distinct from the logo palette \u2014 red still reads clearly as "error/danger" */
   --sidebar-bg: #0f2744;
   --radius-lg: 14px;
   --radius-md: 10px;
