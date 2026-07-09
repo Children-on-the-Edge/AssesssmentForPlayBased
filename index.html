@@ -21,7 +21,11 @@
         <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">&#9776;</button>
         <div class="brand">Children on the Edge</div>
       </div>
-      <div class="tagline">Assessing child development and environmental provision and practice</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="tagline">Assessing child development and environmental provision and practice</div>
+        <div id="cloud-status-icon" class="cloud-status-icon"></div>
+        <div id="google_translate_element" class="lang-switcher" title="Translate this page"></div>
+      </div>
     </div>
     <div class="body-row">
       <div id="sidebar-backdrop"></div>
@@ -47,5 +51,24 @@
   <script src="js/reports.js"></script>
   <script src="js/view-settings.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- Optional page translation. Google's official translator widget is available
+       to nonprofit/government sites (Children on the Edge qualifies) but formally
+       requires signing up via Google's own eligibility form for full support — this
+       embeds the same public widget directly in the meantime. If Google ever
+       restricts this further, removing these two script blocks fully removes the
+       feature with no effect on anything else; browsers also offer their own
+       built-in page translation as a free fallback regardless. -->
+  <script>
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: "en",
+        includedLanguages: "sw,fr,rw,am,ar,pt,es",
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, "google_translate_element");
+    }
+  </script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 </body>
 </html>
