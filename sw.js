@@ -1,5 +1,5 @@
 /* sw.js — offline cache for the PPAT app shell. */
-const CACHE_NAME = "ppat-cache-v20";
+const CACHE_NAME = "ppat-cache-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -52,7 +52,7 @@ self.addEventListener("fetch", (event) => {
   // Never cache calls to the Sheets API or Google sign-in — those need to always hit the
   // network. (Deliberately specific here, not a blanket "googleapis.com" check, so that
   // fonts.googleapis.com / fonts.gstatic.com still get cached normally for offline use.)
-  if (event.request.url.includes("sheets.googleapis.com") || event.request.url.includes("www.googleapis.com") || event.request.url.includes("accounts.google.com") || event.request.url.includes("translate.google")) return;
+  if (event.request.url.includes("sheets.googleapis.com") || event.request.url.includes("www.googleapis.com") || event.request.url.includes("accounts.google.com")) return;
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
