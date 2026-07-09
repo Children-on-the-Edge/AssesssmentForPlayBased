@@ -113,10 +113,12 @@ function renderSettings() {
           The password is hashed in your browser before the link is built \u2014 the link itself never contains a readable password, only the same kind of one-way hash the login screen already uses.
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn btn-outline" id="download-template">Download CSV Template</button>
+          <button class="btn btn-outline" id="download-template">Download Blank Template</button>
+          <button class="btn btn-outline" id="export-current-csv">Export Current Setup as CSV</button>
           <input type="file" id="orgsetup-csv-file" accept=".csv" />
           <button class="btn btn-primary" id="gen-setup-link-csv">Generate Link from CSV</button>
         </div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:6px">"Export Current Setup" is the easiest starting point if you just want to add more Zones/Settings/etc. to what's already here \u2014 it downloads the real current list (plus this device's Cloud Sync config and admin login, safely as a hash) ready to bulk-edit and re-upload.</div>
         <div id="csv-setup-summary" style="margin-top:10px;font-size:12px;color:var(--text-mid)"></div>
         <div id="csv-setup-link-wrap" style="display:none;margin-top:10px">
           <input id="csv-setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
@@ -136,6 +138,10 @@ function renderSettings() {
 
     document.getElementById("download-template").onclick = () => {
       DB.downloadText("org_setup_template.csv", ORG_SETUP_CSV_TEMPLATE);
+    };
+    document.getElementById("export-current-csv").onclick = () => {
+      DB.downloadText("org_setup_export.csv", buildOrgSetupCSVFromCurrentDevice());
+      toast("Exported. Edit and re-upload it to bulk-add more values.", "success");
     };
 
     document.getElementById("gen-setup-link-csv").onclick = async () => {
