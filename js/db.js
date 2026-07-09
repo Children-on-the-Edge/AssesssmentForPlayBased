@@ -37,6 +37,58 @@ const DB = (() => {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
+  // ── Backup encryption (PBKDF2 + AES-GCM) ────────────────────────────
+  // Same scheme/field names as the original desktop tool's encrypted backups
+  // (salt/iv/ciphertext, SHA-256, 150k iterations), so old backup files this
+  // app has ever produced stay restorable.
+  const PBKDF2_ITERATIONS = 150000;
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+  function base64ToBytes(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  function randomBytes(n) {
+    const a = new Uint8Array(n);
+    crypto.getRandomValues(a);
+    return a;
+  }
+  async function deriveAesKey(password, saltBytes) {
+    const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+  }
+  async function encryptJSON(password, obj) {
+    const salt = randomBytes(16);
+    const iv = randomBytes(12);
+    const key = await deriveAesKey(password, salt);
+    const plaintext = new TextEncoder().encode(JSON.stringify(obj));
+    const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+    return { salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(cipherBuf)) };
+  }
+  async function decryptJSON(password, encObj) {
+    const salt = base64ToBytes(encObj.salt);
+    const iv = base64ToBytes(encObj.iv);
+    const ciphertext = base64ToBytes(encObj.ciphertext);
+    const key = await deriveAesKey(password, salt);
+    const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+    return JSON.parse(new TextDecoder().decode(plainBuf));
+  }
+
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
@@ -116,6 +168,12 @@ const DB = (() => {
       if (!a) return false;
       const hash = await sha256(password);
       return a.username === username.trim() && a.passwordHash === hash;
+    },
+    async checkPasswordOnly(password) {
+      const a = auth.get();
+      if (!a) return false;
+      const hash = await sha256(password);
+      return a.passwordHash === hash;
     },
     async setCredentials(username, password) {
       _set(KEYS.auth, { username: username.trim(), passwordHash: await sha256(password) });
@@ -262,7 +320,7 @@ const DB = (() => {
     URL.revokeObjectURL(url);
   }
 
-  function backupAll() {
+  async function backupAll(password) {
     const payload = {
       exportedAt: new Date().toISOString(),
       app: "PPAT",
@@ -273,10 +331,11 @@ const DB = (() => {
       tool1sections: tool1Sections.get(),
       tool2sections: tool2Sections.get()
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const encrypted = await encryptJSON(password, payload);
+    const blob = new Blob([JSON.stringify(encrypted, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `ppat_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.href = url; a.download = `ppat_backup_${new Date().toISOString().slice(0, 10)}_encrypted.json`;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
@@ -300,9 +359,22 @@ const DB = (() => {
     if (payload.tool2sections) tool2Sections.set(payload.tool2sections);
   }
 
+  // Reads a backup file's raw text, transparently decrypting it if it's the
+  // encrypted {salt,iv,ciphertext} format, or treating it as a legacy plain
+  // JSON backup (from before encryption was added) otherwise. Throws if the
+  // password is wrong or the file is corrupted/unrecognized.
+  async function restoreFromFile(text, mode, password) {
+    const raw = JSON.parse(text);
+    const payload = (raw && raw.salt && raw.iv && raw.ciphertext)
+      ? await decryptJSON(password, raw)
+      : raw;
+    restoreAll(payload, mode);
+    return payload;
+  }
+
   return {
     init, values, tool1Sections, tool2Sections, tool1, tool2, auth,
     parseCSV, toCSVRows, tool1ToCSVRows, tool1FromCSVRows, tool2ToCSVRows, tool2FromCSVRows,
-    downloadText, backupAll, restoreAll, uid
+    downloadText, backupAll, restoreAll, restoreFromFile, uid
   };
 })();
