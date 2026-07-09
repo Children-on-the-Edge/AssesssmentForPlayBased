@@ -259,7 +259,9 @@ function renderReportsPage() {
     });
   }
 
-  // ── Action Plan tab (Going Well / Needs Addressing + editable notes + PDF) ──
+  // ── Action Plan tab (single-location report: score tables, Going Well /
+  // Needs Addressing, and editable notes — matching the original per-zone
+  // dashboard layout, filtered to one Setting or Zone at a time) ──
   function drawActionPlanTab(body) {
     const s = state.actionplan;
 
@@ -277,25 +279,39 @@ function renderReportsPage() {
     const names = distinctGroupNames(t1All, t2All);
     if (!s.selectedGroup || !names.includes(s.selectedGroup)) s.selectedGroup = names[0] || null;
 
-    const rowsHtml = names.map(name => {
-      const t1recs = t1All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === name);
-      const t2recs = t2All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === name);
-      const t1gw = tool1GoingWellNeedsAddressing(t1recs);
-      const t2gw = tool2GoingWellNeedsAddressing(t2recs);
-      return `
-        <tr>
-          <td rowspan="2" style="font-weight:700;vertical-align:top;padding-top:10px;border-bottom:1px solid #f1f5f9">${esc(name)}</td>
-          <td style="background:#eafbea;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t1gw.goingWell))}</td>
-          <td style="background:#eafbea;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t2gw.goingWell))}</td>
-          <td style="font-weight:700;color:var(--green);white-space:nowrap">Going well</td>
-        </tr>
-        <tr>
-          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t1gw.needsAddressing))}</td>
-          <td style="background:#fdeaea;border-bottom:1px solid #f1f5f9;white-space:normal;word-wrap:break-word;max-width:320px">${esc(joinOrNoMatches(t2gw.needsAddressing))}</td>
-          <td style="font-weight:700;color:var(--red);border-bottom:1px solid #f1f5f9;white-space:nowrap">Needs Addressing</td>
-        </tr>
-      `;
-    }).join("");
+    const rowLabel = s.groupBy === "setting" ? "Setting" : "Zone";
+    const t1ForLocation = s.selectedGroup ? t1All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === s.selectedGroup) : [];
+    const t2ForLocation = s.selectedGroup ? t2All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === s.selectedGroup) : [];
+
+    const t1gw = tool1GoingWellNeedsAddressing(t1ForLocation);
+    const t2gw = tool2GoingWellNeedsAddressing(t2ForLocation);
+
+    // Reuses the same score-table renderer as the Comparisons tab, just fixed to one location.
+    const scoreTablesHtml = s.selectedGroup ? `
+      ${renderHeatmapTable("tool1", "Child Development Tool", t1ForLocation, () => s.selectedGroup, rowLabel)}
+      ${renderHeatmapTable("tool2", "Environmental Tool", t2ForLocation, () => s.selectedGroup, rowLabel)}
+    ` : "";
+
+    const goingWellHtml = s.selectedGroup ? `
+      <div class="score-card" style="max-width:800px;margin-top:16px">
+        <div class="sc-title">Going Well / Needs Addressing</div>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px">
+          <thead><tr><th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px">Tool 1</th><th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px">Tool 2</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="background:#eafbea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t1gw.goingWell))}</td>
+              <td style="background:#eafbea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t2gw.goingWell))}</td>
+              <td style="font-weight:700;color:var(--green);white-space:nowrap;padding:6px 8px">Going well</td>
+            </tr>
+            <tr>
+              <td style="background:#fdeaea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t1gw.needsAddressing))}</td>
+              <td style="background:#fdeaea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t2gw.needsAddressing))}</td>
+              <td style="font-weight:700;color:var(--red);white-space:nowrap;padding:6px 8px">Needs Addressing</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    ` : "";
 
     const notesKey = `${s.groupBy}:${s.selectedGroup}`;
     const notes = (s.selectedGroup && DB.actionPlanNotes.getForGroup(notesKey)) || {
@@ -306,12 +322,16 @@ function renderReportsPage() {
 
     body.innerHTML = `
       <div style="padding:16px 18px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
               <button data-ap-groupby="setting" class="small-btn" style="border:none;background:${s.groupBy === "setting" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
               <button data-ap-groupby="zone" class="small-btn" style="border:none;background:${s.groupBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
             </div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-mid)">${esc(rowLabel)}:</label>
+            <select id="ap-location-select">
+              ${names.map(n => `<option value="${esc(n)}" ${n === s.selectedGroup ? "selected" : ""}>${esc(n)}</option>`).join("")}
+            </select>
             <label style="font-size:12px;font-weight:700;color:var(--text-mid)">Year:</label>
             <select id="ap-year">
               <option value="All" ${s.year === "All" ? "selected" : ""}>All</option>
@@ -322,21 +342,11 @@ function renderReportsPage() {
         </div>
 
         ${names.length ? `
-          <div class="records-table-wrap" style="margin:0 0 20px">
-            <table class="records-table">
-              <thead><tr><th>${s.groupBy === "setting" ? "Setting" : "Zone"}</th><th>Tool 1</th><th>Tool 2</th><th></th></tr></thead>
-              <tbody>${rowsHtml}</tbody>
-            </table>
-          </div>
-        ` : `<div class="empty-state">No records yet \u2014 complete some assessments to see the Action Plan.</div>`}
+          ${scoreTablesHtml}
+          ${goingWellHtml}
 
-        ${names.length ? `
-          <div class="score-card" style="max-width:800px">
-            <div class="sc-title">Notes for:
-              <select id="ap-group-select" style="margin-left:8px">
-                ${names.map(n => `<option value="${esc(n)}" ${n === s.selectedGroup ? "selected" : ""}>${esc(n)}</option>`).join("")}
-              </select>
-            </div>
+          <div class="score-card" style="max-width:800px;margin-top:16px">
+            <div class="sc-title">Notes for ${esc(s.selectedGroup)}</div>
             <div style="margin-top:14px">
               <label style="font-weight:700;font-size:12px;color:var(--text-mid)">Strengths</label>
               ${[0, 1, 2].map(i => `<input class="ap-strength" data-i="${i}" value="${esc(notes.strengths[i] || "")}" style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:6px;padding:6px 8px" placeholder="Strength ${i + 1}" />`).join("")}
@@ -361,7 +371,7 @@ function renderReportsPage() {
             </div>
             <button class="btn btn-primary" id="ap-save-notes" style="margin-top:14px">Save Notes</button>
           </div>
-        ` : ""}
+        ` : `<div class="empty-state">No records yet \u2014 complete some assessments to see the Action Plan.</div>`}
       </div>
     `;
 
@@ -378,7 +388,7 @@ function renderReportsPage() {
 
     if (!names.length) return;
 
-    document.getElementById("ap-group-select").addEventListener("change", (e) => {
+    document.getElementById("ap-location-select").addEventListener("change", (e) => {
       s.selectedGroup = e.target.value;
       drawActionPlanTab(body);
     });
