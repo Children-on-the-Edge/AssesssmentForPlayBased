@@ -402,6 +402,7 @@ function renderCloudSyncPage() {
     const clientId = SheetsSync.getClientId();
     const sheetId = SheetsSync.getSheetId();
     const connected = SheetsSync.isConnected();
+    const pendingCount = DB.syncQueue.count();
     const isHttps = location.protocol === "https:";
     const guideUrl = guessSetupGuideUrl();
 
@@ -447,6 +448,16 @@ function renderCloudSyncPage() {
             <button class="btn btn-grey" id="cs-disconnect">Disconnect</button>
           </div>
           <div id="cs-status" style="margin-top:8px;font-size:12px;color:var(--text-mid)"></div>
+        </div>
+
+        <div class="score-card" style="max-width:600px;margin-top:12px">
+          <div class="sc-title">Pending Sync</div>
+          <div class="sc-body">
+            ${pendingCount > 0
+              ? `${pendingCount} record${pendingCount !== 1 ? "s" : ""} saved locally and waiting to reach the shared sheet \u2014 this happens automatically once you're back online, or click below to try right now.`
+              : `Nothing waiting \u2014 everything saved on this device has synced.`}
+          </div>
+          ${pendingCount > 0 ? `<button class="btn btn-outline" id="cs-sync-now" style="margin-top:8px">Sync Now</button>` : ""}
         </div>
       </div>
     `;
@@ -509,6 +520,17 @@ function renderCloudSyncPage() {
     }
     document.getElementById("cs-pull-t1").onclick = () => pull("tool1", "Tool 1");
     document.getElementById("cs-pull-t2").onclick = () => pull("tool2", "Tool 2");
+
+    const syncNowBtn = document.getElementById("cs-sync-now");
+    if (syncNowBtn) {
+      syncNowBtn.onclick = async () => {
+        syncNowBtn.disabled = true;
+        syncNowBtn.textContent = "Syncing\u2026";
+        await flushSyncQueue();
+        toast(`${DB.syncQueue.count()} record(s) still pending.`.replace("0 record(s) still pending.", "All caught up."), "success");
+        draw();
+      };
+    }
   }
 
   draw();
