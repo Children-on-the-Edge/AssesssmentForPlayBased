@@ -371,23 +371,18 @@ function renderRecordsView(tool) {
       if (isT1) renderZonePanel();
       draw();
 
-      // Push each imported record to the shared Google Sheet too, if Cloud Sync is set up.
-      // Sequential (not parallel) to stay gentle on the Sheets API; runs in the background
-      // and reports back with a follow-up toast rather than blocking the import itself.
+      // Queues each imported record for the shared Google Sheet, if Cloud Sync is set
+      // up. Anything that doesn't push successfully right now stays safely queued and
+      // retries automatically once back online — never just reported as failed and left.
       if (window.SheetsSync && SheetsSync.isConfigured() && savedRecords.length) {
-        let synced = 0, failed = 0;
-        for (const rec of savedRecords) {
-          try {
-            await SheetsSync.pushRecord(tool, rec);
-            synced++;
-          } catch (e) {
-            failed++;
-          }
-        }
-        if (failed === 0) {
+        savedRecords.forEach(rec => DB.syncQueue.add(tool, rec.id));
+        await flushSyncQueue();
+        const stillPending = savedRecords.filter(rec => DB.syncQueue.has(tool, rec.id)).length;
+        const synced = savedRecords.length - stillPending;
+        if (stillPending === 0) {
           toast(`Synced ${synced} imported record${synced !== 1 ? "s" : ""} to the shared sheet.`, "success");
         } else {
-          toast(`Synced ${synced}, but ${failed} failed to sync \u2014 try "Pull Latest" or re-import later.`, "error");
+          toast(`Synced ${synced}, ${stillPending} queued to sync automatically once back online.`, "");
         }
       }
     };
