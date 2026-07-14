@@ -203,12 +203,17 @@ function renderTool1(existingId) {
     renderZonePanel();
     renderTool1(rec.id);
 
-    // Best-effort push to the shared Google Sheet ledger, if Cloud Sync is set up.
-    // Never blocks the save and never surfaces an error louder than a toast.
+    // Queues for the shared Google Sheet ledger, if Cloud Sync is set up. The record
+    // is safe either way — a failed push just stays queued and retries automatically
+    // once back online, so this never risks losing anything, just delays the sync.
     if (window.SheetsSync && SheetsSync.isConfigured()) {
-      SheetsSync.pushRecord("tool1", rec)
-        .then(() => toast("Synced to shared sheet.", "success"))
-        .catch(err => toast("Saved locally, but cloud sync failed: " + err.message, "error"));
+      queueAndPushRecord("tool1", rec).then(() => {
+        if (DB.syncQueue.has("tool1", rec.id)) {
+          toast("Saved locally. Will sync to the shared sheet once you're back online.", "");
+        } else {
+          toast("Synced to shared sheet.", "success");
+        }
+      });
     }
   };
 
