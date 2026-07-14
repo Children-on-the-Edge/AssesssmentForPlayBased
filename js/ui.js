@@ -43,15 +43,22 @@ function renderCloudStatusIcon() {
     return;
   }
   const connected = SheetsSync.isConnected();
+  const pending = (window.DB && DB.syncQueue) ? DB.syncQueue.count() : 0;
   const color = connected ? "#4ade80" : "#94a3b8";
   const slash = connected ? "" : `<line x1="2" y1="2" x2="22" y2="22"></line>`;
-  el.title = connected ? "Cloud Sync connected \u2014 click to open" : "Cloud Sync not connected \u2014 click to open";
+  const titleParts = [connected ? "Cloud Sync connected" : "Cloud Sync not connected"];
+  if (pending > 0) titleParts.push(`${pending} record${pending !== 1 ? "s" : ""} waiting to sync`);
+  titleParts.push("click to open");
+  el.title = titleParts.join(" \u2014 ");
   el.style.cursor = "pointer";
+  el.style.position = "relative";
   el.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
       ${slash}
-    </svg>`;
+    </svg>
+    ${pending > 0 ? `<span style="position:absolute;top:-6px;right:-8px;background:#f0982c;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 4px;line-height:1.3;min-width:14px;text-align:center">${pending}</span>` : ""}
+  `;
   el.onclick = () => { if (window.App) window.App.navigate("cloudsync"); };
 }
 
