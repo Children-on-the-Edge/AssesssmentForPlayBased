@@ -68,6 +68,12 @@ const App = (() => {
     if ("serviceWorker" in navigator) {
       try { await navigator.serviceWorker.register("sw.js"); } catch (e) { console.warn("SW registration failed", e); }
     }
+
+    // Durable sync queue: catch anything left over from a previous session,
+    // then keep retrying automatically whenever connectivity returns.
+    flushSyncQueue();
+    window.addEventListener("online", () => flushSyncQueue());
+    setInterval(() => flushSyncQueue(), 60000); // safety net in case "online" doesn't fire reliably
   }
 
   return { navigate, boot };
