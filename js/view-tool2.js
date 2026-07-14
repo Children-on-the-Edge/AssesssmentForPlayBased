@@ -121,9 +121,13 @@ function renderTool2(existingId) {
     renderTool2(rec.id);
 
     if (window.SheetsSync && SheetsSync.isConfigured()) {
-      SheetsSync.pushRecord("tool2", rec)
-        .then(() => toast("Synced to shared sheet.", "success"))
-        .catch(err => toast("Saved locally, but cloud sync failed: " + err.message, "error"));
+      queueAndPushRecord("tool2", rec).then(() => {
+        if (DB.syncQueue.has("tool2", rec.id)) {
+          toast("Saved locally. Will sync to the shared sheet once you're back online.", "");
+        } else {
+          toast("Synced to shared sheet.", "success");
+        }
+      });
     }
   };
 
