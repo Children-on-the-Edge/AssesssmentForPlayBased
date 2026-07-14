@@ -13,6 +13,7 @@ const DB = (() => {
     tool1sections: "pp_tool1_sections",
     tool2sections: "pp_tool2_sections",
     actionPlanNotes: "pp_action_plan_notes",
+    syncQueue: "pp_sync_queue",
     auth: "pp_auth",
     meta: "pp_meta"
   };
@@ -132,6 +133,29 @@ const DB = (() => {
       all[key] = data;
       actionPlanNotes.set(all);
     }
+  };
+
+  // Durable queue of records still waiting to sync to the shared Google Sheet.
+  // Stored in local storage (not memory) so it survives a closed tab, a lost
+  // connection, or the browser quitting mid-save — nothing queued here is ever
+  // silently lost, only retried later. See sync-queue.js for how it's flushed.
+  const syncQueue = {
+    get: () => _get(KEYS.syncQueue, []), // array of {tool, id}
+    set: (v) => _set(KEYS.syncQueue, v),
+    add(tool, id) {
+      const q = syncQueue.get();
+      if (!q.some(e => e.tool === tool && e.id === id)) {
+        q.push({ tool, id });
+        syncQueue.set(q);
+      }
+    },
+    remove(tool, id) {
+      syncQueue.set(syncQueue.get().filter(e => !(e.tool === tool && e.id === id)));
+    },
+    has(tool, id) {
+      return syncQueue.get().some(e => e.tool === tool && e.id === id);
+    },
+    count: () => syncQueue.get().length
   };
 
   // ── Assessments ─────────────────────────────────────────────────────
@@ -398,7 +422,7 @@ const DB = (() => {
   }
 
   return {
-    init, values, tool1Sections, tool2Sections, actionPlanNotes, tool1, tool2, auth, sha256,
+    init, values, tool1Sections, tool2Sections, actionPlanNotes, syncQueue, tool1, tool2, auth, sha256,
     parseCSV, toCSVRows, tool1ToCSVRows, tool1FromCSVRows, tool2ToCSVRows, tool2FromCSVRows,
     downloadText, backupAll, restoreAll, restoreFromFile, uid
   };
