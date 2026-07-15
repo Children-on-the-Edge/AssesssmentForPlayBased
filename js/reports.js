@@ -57,7 +57,7 @@ function renderReportsPage() {
   const state = {
     tab: "charts",
     charts: { zone: "All", setting: "All", facilitator: "All", assessor: "All", gender: "All", compareBy: "zone", compareSelected: null },
-    comparisons: { tool: "tool1", year: "All" },
+    comparisons: { tool: "tool1", year: "All", compareYears: null },
     actionplan: { groupBy: "setting", selectedGroup: null, year: "All" }
   };
 
@@ -251,11 +251,18 @@ function renderReportsPage() {
       </div>
       <div id="rp-cmp-content"></div>
     `;
-    document.getElementById("rp-cmp-content").innerHTML = renderComparisonsTab(s.tool, s.year); // defined in view-records.js
+    document.getElementById("rp-cmp-content").innerHTML = renderComparisonsTab(s.tool, s.year, s.compareYears); // defined in view-records.js
     const yearSel = document.getElementById("cmp-year");
     if (yearSel) yearSel.addEventListener("change", () => { s.year = yearSel.value; drawComparisonsTab(body); });
     body.querySelectorAll("[data-cmp-tool]").forEach(btn => {
-      btn.addEventListener("click", () => { s.tool = btn.dataset.cmpTool; s.year = "All"; drawComparisonsTab(body); });
+      btn.addEventListener("click", () => { s.tool = btn.dataset.cmpTool; s.year = "All"; s.compareYears = null; drawComparisonsTab(body); });
+    });
+    body.querySelectorAll("[data-cmp-year-multi]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const allChecked = Array.from(body.querySelectorAll("[data-cmp-year-multi]:checked")).map(el => el.dataset.cmpYearMulti);
+        s.compareYears = allChecked;
+        drawComparisonsTab(body);
+      });
     });
   }
 
