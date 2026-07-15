@@ -57,7 +57,7 @@ function renderReportsPage() {
   const state = {
     tab: "charts",
     charts: { zone: "All", setting: "All", facilitator: "All", assessor: "All", gender: "All", compareBy: "zone", compareSelected: null },
-    comparisons: { tool: "tool1", year: "All", compareYears: null },
+    comparisons: { tool: "tool1", year: "All", compareYears: null, compareLocation: { mode: "all", value: "" } },
     actionplan: { groupBy: "setting", selectedGroup: null, year: "All" }
   };
 
@@ -251,11 +251,11 @@ function renderReportsPage() {
       </div>
       <div id="rp-cmp-content"></div>
     `;
-    document.getElementById("rp-cmp-content").innerHTML = renderComparisonsTab(s.tool, s.year, s.compareYears); // defined in view-records.js
+    document.getElementById("rp-cmp-content").innerHTML = renderComparisonsTab(s.tool, s.year, s.compareYears, s.compareLocation); // defined in view-records.js
     const yearSel = document.getElementById("cmp-year");
     if (yearSel) yearSel.addEventListener("change", () => { s.year = yearSel.value; drawComparisonsTab(body); });
     body.querySelectorAll("[data-cmp-tool]").forEach(btn => {
-      btn.addEventListener("click", () => { s.tool = btn.dataset.cmpTool; s.year = "All"; s.compareYears = null; drawComparisonsTab(body); });
+      btn.addEventListener("click", () => { s.tool = btn.dataset.cmpTool; s.year = "All"; s.compareYears = null; s.compareLocation = { mode: "all", value: "" }; drawComparisonsTab(body); });
     });
     body.querySelectorAll("[data-cmp-year-multi]").forEach(cb => {
       cb.addEventListener("change", () => {
@@ -264,6 +264,19 @@ function renderReportsPage() {
         drawComparisonsTab(body);
       });
     });
+    body.querySelectorAll("[data-cmp-loc-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        s.compareLocation = { mode: btn.dataset.cmpLocMode, value: "" };
+        drawComparisonsTab(body);
+      });
+    });
+    const locValueSel = document.getElementById("cmp-loc-value");
+    if (locValueSel) {
+      locValueSel.addEventListener("change", () => {
+        s.compareLocation = { mode: s.compareLocation.mode, value: locValueSel.value };
+        drawComparisonsTab(body);
+      });
+    }
   }
 
   // ── Action Plan tab (single-location report: score tables, Going Well /
