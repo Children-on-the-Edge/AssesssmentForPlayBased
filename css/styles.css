@@ -225,6 +225,7 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
 @media (max-width: 760px) {
   .hamburger-btn { display: inline-block; }
   .topbar .tagline { display: none; }
+  .topbar .brand { font-size: 13px; }
   .sidebar {
     position: fixed;
     top: 52px;
