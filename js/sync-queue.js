@@ -49,3 +49,19 @@ async function flushSyncQueue() {
 function pendingSyncCount() {
   return (window.DB && DB.syncQueue) ? DB.syncQueue.count() : 0;
 }
+
+// Recovers records that were saved before this device ever had a working sync
+// (or failed silently under older versions of this app, before the durable queue
+// existed) — compares what's actually in the shared sheet against what's on this
+// device, and pushes only the ones genuinely missing. Never re-pushes records
+// already present, so it can't create duplicates.
+async function recoverMissingRecords(tool) {
+  const remote = await SheetsSync.pullAll(tool);
+  const remoteIds = new Set(remote.map(r => r.id));
+  const local = tool === "tool1" ? DB.tool1.all() : DB.tool2.all();
+  const missing = local.filter(r => !remoteIds.has(r.id));
+  missing.forEach(rec => DB.syncQueue.add(tool, rec.id));
+  await flushSyncQueue();
+  const stillMissing = missing.filter(rec => DB.syncQueue.has(tool, rec.id)).length;
+  return { found: missing.length, recovered: missing.length - stillMissing };
+}
