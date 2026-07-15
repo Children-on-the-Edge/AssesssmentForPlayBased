@@ -178,7 +178,95 @@ function renderHeatmapTable(tool, title, records, groupKeyFn, rowLabel) {
   `;
 }
 
-function renderComparisonsTab(tool, yearFilter) {
+// Interactive multi-select year comparison: pick any years, see them side by side
+// per skill/section, with a small +/- delta between each consecutive selected year
+// showing exactly where results improved or slipped.
+function renderYearComparisonSection(tool, allRecords, allYears, selectedYears) {
+  const isT1 = tool === "tool1";
+  let colKeys, colLabel, cellValue, overallValue, cellStyle, fmt, fmtDelta;
+  if (isT1) {
+    colKeys = Object.keys(SECTION_LABELS);
+    colLabel = (k) => SECTION_LABELS[k];
+    cellValue = (recs, k) => tool1SectionAvgForGroup(recs, k);
+    overallValue = tool1OverallForGroup;
+    cellStyle = tool1CellStyle;
+    fmt = (v) => v === null ? "\u2014" : v.toFixed(2);
+    fmtDelta = (d) => (d > 0 ? "+" : "") + d.toFixed(2);
+  } else {
+    const sections = DB.tool2Sections.get();
+    colKeys = Object.keys(sections);
+    colLabel = (k) => k;
+    cellValue = (recs, k) => tool2SectionPctForGroup(recs, sections[k].goals);
+    overallValue = tool2OverallPctForGroup;
+    cellStyle = tool2CellStyle;
+    fmt = (v) => v === null ? "\u2014" : Math.round(v) + "%";
+    fmtDelta = (d) => (d > 0 ? "+" : "") + Math.round(d) + "%";
+  }
+
+  const years = selectedYears.slice().sort();
+  const yearChips = allYears.map(y => {
+    const checked = selectedYears.includes(y);
+    return `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border:1px solid ${checked ? "var(--accent)" : "var(--card-border)"};border-radius:20px;cursor:pointer;background:${checked ? "#eaf3fb" : "#fff"};margin-right:6px;margin-bottom:6px">
+      <input type="checkbox" data-cmp-year-multi="${esc(y)}" ${checked ? "checked" : ""} />
+      ${esc(y)}
+    </label>`;
+  }).join("");
+
+  function deltaHtml(val, prevVal) {
+    if (val === null || prevVal === null) return "";
+    const diff = val - prevVal;
+    const color = diff > 0.0001 ? "var(--green)" : diff < -0.0001 ? "var(--red)" : "var(--text-light)";
+    return `<div style="font-size:10px;color:${color};font-weight:700;margin-top:2px">${esc(fmtDelta(diff))}</div>`;
+  }
+
+  const body = years.length < 2
+    ? `<div class="empty-state" style="padding:20px 10px">Select two or more years above to compare.</div>`
+    : (() => {
+        const perYearRecords = {};
+        years.forEach(y => { perYearRecords[y] = allRecords.filter(r => recordYear(r) === y); });
+
+        const rowsHtml = colKeys.map(k => {
+          const cells = years.map((y, i) => {
+            const val = cellValue(perYearRecords[y], k);
+            const style = cellStyle(val);
+            const delta = i > 0 ? deltaHtml(val, cellValue(perYearRecords[years[i - 1]], k)) : "";
+            return `<td style="text-align:center;background:${style.bg};color:${style.fg};font-weight:700;padding:6px 8px;border-bottom:1px solid #fff">${fmt(val)}${delta}</td>`;
+          }).join("");
+          return `<tr><td style="font-weight:700;font-size:12px;padding:6px 8px;border-bottom:1px solid #fff;white-space:nowrap">${esc(colLabel(k))}</td>${cells}</tr>`;
+        }).join("");
+
+        const overallCells = years.map((y, i) => {
+          const val = overallValue(perYearRecords[y]);
+          const style = cellStyle(val);
+          const delta = i > 0 ? deltaHtml(val, overallValue(perYearRecords[years[i - 1]])) : "";
+          return `<td style="text-align:center;background:${style.bg};color:${style.fg};font-weight:700;padding:6px 8px">${fmt(val)}${delta}</td>`;
+        }).join("");
+
+        return `
+          <table style="width:100%;border-collapse:collapse;margin-top:8px">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px;border-bottom:1px solid var(--card-border)"></th>
+              ${years.map(y => `<th style="font-size:11px;color:var(--text-mid);padding:6px 8px;border-bottom:1px solid var(--card-border)">${esc(y)}</th>`).join("")}
+            </tr></thead>
+            <tbody>
+              ${rowsHtml}
+              <tr><td style="font-weight:700;font-size:12px;padding:6px 8px;border-top:2px solid var(--card-border)">Overall</td>${overallCells}</tr>
+            </tbody>
+          </table>
+          <div style="font-size:10px;color:var(--text-light);margin-top:8px">Small numbers show the change from the previous selected year (in order) \u2014 green/+ for improvement, red/\u2013 for decline.</div>
+        `;
+      })();
+
+  return `
+    <div class="score-card" style="margin-top:16px;overflow-x:auto">
+      <div class="sc-title">Compare Years</div>
+      <div style="margin:10px 0">${yearChips}</div>
+      ${body}
+    </div>
+  `;
+}
+
+function renderComparisonsTab(tool, yearFilter, compareYears) {
   const allRecords = tool === "tool1" ? DB.tool1.all() : DB.tool2.all();
   const years = Array.from(new Set(allRecords.map(recordYear))).sort();
   const filtered = (!yearFilter || yearFilter === "All") ? allRecords : allRecords.filter(r => recordYear(r) === yearFilter);
@@ -188,6 +276,7 @@ function renderComparisonsTab(tool, yearFilter) {
     : "% of goals scored \u201cYes\u201d \u2014 green \u2265 51%, amber \u2265 25%, red below";
 
   const yearOptions = ["All", ...years].map(y => `<option value="${esc(y)}" ${y === (yearFilter || "All") ? "selected" : ""}>${esc(y)}</option>`).join("");
+  const selectedYears = (compareYears && compareYears.length) ? compareYears.filter(y => years.includes(y)) : years.slice(-2);
 
   return `
     <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-width:1100px">
@@ -198,7 +287,7 @@ function renderComparisonsTab(tool, yearFilter) {
       </div>
       ${renderHeatmapTable(tool, "By Setting", filtered, r => r.meta && r.meta.setting, "Setting")}
       ${renderHeatmapTable(tool, "By Zone", filtered, r => r.meta && r.meta.zone, "Zone")}
-      ${renderHeatmapTable(tool, "Year on Year (all years, unfiltered)", allRecords, recordYear, "Year")}
+      ${renderYearComparisonSection(tool, allRecords, years, selectedYears)}
     </div>
   `;
 }
