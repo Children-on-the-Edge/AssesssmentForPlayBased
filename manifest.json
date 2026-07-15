@@ -1,7 +1,7 @@
 {
   "name": "Assessment for Play-based Early Childhood Education",
   "short_name": "PPAT",
-  "description": "Children on the Edge \u2014 child development and environmental assessment tool",
+  "description": "Children on the Edge & Learn to Play \u2014 child development and environmental assessment tool",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
