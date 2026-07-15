@@ -455,9 +455,19 @@ function renderCloudSyncPage() {
           <div class="sc-body">
             ${pendingCount > 0
               ? `${pendingCount} record${pendingCount !== 1 ? "s" : ""} saved locally and waiting to reach the shared sheet \u2014 this happens automatically once you're back online, or click below to try right now.`
-              : `Nothing waiting \u2014 everything saved on this device has synced.`}
+              : `Nothing waiting \u2014 everything saved since the sync queue was added has synced.`}
           </div>
           ${pendingCount > 0 ? `<button class="btn btn-outline" id="cs-sync-now" style="margin-top:8px">Sync Now</button>` : ""}
+        </div>
+
+        <div class="score-card" style="max-width:600px;margin-top:12px">
+          <div class="sc-title">Recover Missing Records</div>
+          <div class="sc-body">If the shared sheet has fewer rows than expected \u2014 e.g. from a save that failed before the sync queue existed \u2014 this checks what's actually in the sheet against what's on this device, and pushes only whatever's genuinely missing. Safe to run any time; never creates duplicates for records already synced.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn btn-outline" id="cs-recover-t1" ${clientId && sheetId ? "" : "disabled"}>Recover Missing (Tool 1)</button>
+            <button class="btn btn-outline" id="cs-recover-t2" ${clientId && sheetId ? "" : "disabled"}>Recover Missing (Tool 2)</button>
+          </div>
+          <div id="cs-recover-status" style="margin-top:8px;font-size:12px;color:var(--text-mid)"></div>
         </div>
       </div>
     `;
@@ -531,6 +541,27 @@ function renderCloudSyncPage() {
         draw();
       };
     }
+
+    async function recover(tool, label, btn) {
+      const status = document.getElementById("cs-recover-status");
+      btn.disabled = true;
+      status.textContent = `Checking ${label} records against the shared sheet\u2026`;
+      try {
+        const { found, recovered } = await recoverMissingRecords(tool);
+        if (found === 0) {
+          status.textContent = `${label}: nothing missing \u2014 the shared sheet already matches this device.`;
+        } else {
+          status.textContent = `${label}: found ${found} missing record(s), recovered ${recovered}.` + (recovered < found ? " The rest are queued and will retry automatically once back online." : "");
+          toast(`${label}: recovered ${recovered} of ${found} missing record(s).`, "success");
+        }
+      } catch (e) {
+        status.textContent = "Error: " + e.message;
+      }
+      btn.disabled = false;
+      renderCloudStatusIcon();
+    }
+    document.getElementById("cs-recover-t1").onclick = (e) => recover("tool1", "Tool 1", e.target);
+    document.getElementById("cs-recover-t2").onclick = (e) => recover("tool2", "Tool 2", e.target);
   }
 
   draw();
