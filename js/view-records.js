@@ -470,7 +470,19 @@ function renderRecordsView(tool) {
 
     const searchEl = document.getElementById("rv-search");
     searchEl.value = state.search;
-    searchEl.addEventListener("input", () => { state.search = searchEl.value; draw(); });
+    searchEl.addEventListener("input", () => {
+      state.search = searchEl.value;
+      const cursorPos = searchEl.selectionStart;
+      draw();
+      // draw() rebuilds the whole page, including a brand-new search box that starts
+      // unfocused — restore focus and cursor position so typing can continue without
+      // needing to click back in after every character.
+      const newSearchEl = document.getElementById("rv-search");
+      if (newSearchEl) {
+        newSearchEl.focus();
+        newSearchEl.setSelectionRange(cursorPos, cursorPos);
+      }
+    });
 
     if (isT1) {
       const ageSel = document.getElementById("rv-age");
