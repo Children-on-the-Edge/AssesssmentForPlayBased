@@ -272,7 +272,10 @@ function renderSettings() {
 
       <div class="score-card" style="max-width:520px;margin-top:12px;border-color:#fecaca">
         <div class="sc-title" style="color:#b91c1c">Danger Zone</div>
-        <div class="sc-body">Permanently deletes assessment records on this device. This cannot be undone \u2014 take a backup first if there's any chance you'll want this data again. Dropdown values, section definitions, and Cloud Sync settings are untouched.</div>
+        <div class="sc-body">Permanently deletes assessment records on this device only. This cannot be undone \u2014 take a backup first if there's any chance you'll want this data again. Dropdown values, section definitions, and Cloud Sync settings are untouched.
+          <br/><br/>
+          <strong>This does not touch the shared Google Sheet.</strong> If Cloud Sync is connected, clicking "Pull Latest" afterward will bring everything straight back down from the Sheet onto this device. To permanently delete data from the shared Sheet itself \u2014 affecting every connected device, not just this one \u2014 you'll need to delete those rows manually, directly in Google Sheets.
+        </div>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="clear-tool1" style="background:#fecaca;color:#7f1d1d">Clear All Tool 1 Records</button>
           <button class="btn" id="clear-tool2" style="background:#fecaca;color:#7f1d1d">Clear All Tool 2 Records</button>
