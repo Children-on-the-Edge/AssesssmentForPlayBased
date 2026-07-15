@@ -314,19 +314,19 @@ function renderReportsPage() {
 
     const goingWellHtml = s.selectedGroup ? `
       <div class="score-card" style="max-width:800px;margin-top:16px">
-        <div class="sc-title">Going Well / Needs Addressing</div>
+        <div class="sc-title">Strengths / Areas for Development</div>
         <table style="width:100%;border-collapse:collapse;margin-top:8px">
           <thead><tr><th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px">Tool 1</th><th style="text-align:left;font-size:10px;color:var(--text-mid);padding:6px 8px">Tool 2</th><th></th></tr></thead>
           <tbody>
             <tr>
               <td style="background:#eafbea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t1gw.goingWell))}</td>
               <td style="background:#eafbea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t2gw.goingWell))}</td>
-              <td style="font-weight:700;color:var(--green);white-space:nowrap;padding:6px 8px">Going well</td>
+              <td style="font-weight:700;color:var(--green);white-space:nowrap;padding:6px 8px">Strengths</td>
             </tr>
             <tr>
               <td style="background:#fdeaea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t1gw.needsAddressing))}</td>
               <td style="background:#fdeaea;white-space:normal;word-wrap:break-word;padding:6px 8px">${esc(joinOrNoMatches(t2gw.needsAddressing))}</td>
-              <td style="font-weight:700;color:var(--red);white-space:nowrap;padding:6px 8px">Needs Addressing</td>
+              <td style="font-weight:700;color:var(--red);white-space:nowrap;padding:6px 8px">Areas for Development</td>
             </tr>
           </tbody>
         </table>
@@ -334,10 +334,9 @@ function renderReportsPage() {
     ` : "";
 
     const notesKey = `${s.groupBy}:${s.selectedGroup}`;
-    const notes = (s.selectedGroup && DB.actionPlanNotes.getForGroup(notesKey)) || {
-      strengths: ["", "", ""],
-      areas: ["", "", ""],
-      targets: [{ target: "", actions: "" }, { target: "", actions: "" }, { target: "", actions: "" }]
+    const savedNotes = s.selectedGroup && DB.actionPlanNotes.getForGroup(notesKey);
+    const notes = {
+      targets: (savedNotes && savedNotes.targets) || [{ target: "", actions: "" }, { target: "", actions: "" }, { target: "", actions: "" }]
     };
 
     body.innerHTML = `
@@ -367,14 +366,6 @@ function renderReportsPage() {
 
           <div class="score-card" style="max-width:800px;margin-top:16px">
             <div class="sc-title">Notes for ${esc(s.selectedGroup)}</div>
-            <div style="margin-top:14px">
-              <label style="font-weight:700;font-size:12px;color:var(--text-mid)">Strengths</label>
-              ${[0, 1, 2].map(i => `<input class="ap-strength" data-i="${i}" value="${esc(notes.strengths[i] || "")}" style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:6px;padding:6px 8px" placeholder="Strength ${i + 1}" />`).join("")}
-            </div>
-            <div style="margin-top:14px">
-              <label style="font-weight:700;font-size:12px;color:var(--text-mid)">Areas for Development</label>
-              ${[0, 1, 2].map(i => `<input class="ap-area" data-i="${i}" value="${esc(notes.areas[i] || "")}" style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:6px;padding:6px 8px" placeholder="Area ${i + 1}" />`).join("")}
-            </div>
             <div style="margin-top:14px">
               <label style="font-weight:700;font-size:12px;color:var(--text-mid)">Targets &amp; Actions</label>
               <table style="width:100%;margin-top:6px;border-collapse:collapse">
@@ -414,14 +405,12 @@ function renderReportsPage() {
     });
 
     document.getElementById("ap-save-notes").onclick = () => {
-      const strengths = Array.from(body.querySelectorAll(".ap-strength")).map(el => el.value);
-      const areas = Array.from(body.querySelectorAll(".ap-area")).map(el => el.value);
       const actionInputs = body.querySelectorAll(".ap-action");
       const targets = Array.from(body.querySelectorAll(".ap-target")).map((el, i) => ({
         target: el.value,
         actions: actionInputs[i] ? actionInputs[i].value : ""
       }));
-      DB.actionPlanNotes.setForGroup(notesKey, { strengths, areas, targets });
+      DB.actionPlanNotes.setForGroup(notesKey, { targets });
       toast("Notes saved.", "success");
     };
   }
