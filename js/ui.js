@@ -284,6 +284,11 @@ function renderSidebar(activeKey) {
 
   sidebar.innerHTML = `
     <div class="logo-wrap"><img src="icons/logo-original.png" alt="Logo" /></div>
+    <div class="partner-logos">
+      <div class="partner-label">In partnership with</div>
+      <img src="icons/logo-cote.png" alt="Children on the Edge" class="org-logo" />
+      <img src="icons/logo-learntoplay.png" alt="Learn to Play" class="org-logo" />
+    </div>
     <div class="divider"></div>
     <div class="nav-label">TOOLS</div>
     ${toolBtns}
