@@ -181,7 +181,8 @@ function renderHeatmapTable(tool, title, records, groupKeyFn, rowLabel) {
 // Interactive multi-select year comparison: pick any years, see them side by side
 // per skill/section, with a small +/- delta between each consecutive selected year
 // showing exactly where results improved or slipped.
-function renderYearComparisonSection(tool, allRecords, allYears, selectedYears) {
+function renderYearComparisonSection(tool, allRecords, allYears, selectedYears, locationFilter) {
+  locationFilter = locationFilter || { mode: "all", value: "" };
   const isT1 = tool === "tool1";
   let colKeys, colLabel, cellValue, overallValue, cellStyle, fmt, fmtDelta;
   if (isT1) {
@@ -219,11 +220,43 @@ function renderYearComparisonSection(tool, allRecords, allYears, selectedYears) 
     return `<div style="font-size:10px;color:${color};font-weight:700;margin-top:2px">${esc(fmtDelta(diff))}</div>`;
   }
 
+  // Location filter: narrows which records feed the year comparison, so you can see
+  // whether one specific Setting or Zone is improving, not just the overall aggregate.
+  const settingNames = Array.from(new Set(allRecords.map(r => ((r.meta && r.meta.setting) || "").trim()).filter(Boolean))).sort();
+  const zoneNames = Array.from(new Set(allRecords.map(r => ((r.meta && r.meta.zone) || "").trim()).filter(Boolean))).sort();
+
+  let locationOptions = [];
+  if (locationFilter.mode === "setting") locationOptions = settingNames;
+  else if (locationFilter.mode === "zone") locationOptions = zoneNames;
+  const locationValue = locationOptions.includes(locationFilter.value) ? locationFilter.value : (locationOptions[0] || "");
+
+  const recordsForYears = locationFilter.mode === "all"
+    ? allRecords
+    : allRecords.filter(r => {
+        const field = locationFilter.mode === "setting" ? "setting" : "zone";
+        return ((r.meta && r.meta[field]) || "").trim() === locationValue;
+      });
+
+  const locationControlsHtml = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
+        <button data-cmp-loc-mode="all" class="small-btn" style="border:none;background:${locationFilter.mode === "all" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "all" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">All Locations</button>
+        <button data-cmp-loc-mode="setting" class="small-btn" style="border:none;background:${locationFilter.mode === "setting" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
+        <button data-cmp-loc-mode="zone" class="small-btn" style="border:none;background:${locationFilter.mode === "zone" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+      </div>
+      ${locationFilter.mode !== "all" ? `
+        <select id="cmp-loc-value">
+          ${locationOptions.map(n => `<option value="${esc(n)}" ${n === locationValue ? "selected" : ""}>${esc(n)}</option>`).join("") || `<option>No data yet</option>`}
+        </select>
+      ` : ""}
+    </div>
+  `;
+
   const body = years.length < 2
     ? `<div class="empty-state" style="padding:20px 10px">Select two or more years above to compare.</div>`
     : (() => {
         const perYearRecords = {};
-        years.forEach(y => { perYearRecords[y] = allRecords.filter(r => recordYear(r) === y); });
+        years.forEach(y => { perYearRecords[y] = recordsForYears.filter(r => recordYear(r) === y); });
 
         const rowsHtml = colKeys.map(k => {
           const cells = years.map((y, i) => {
@@ -260,13 +293,14 @@ function renderYearComparisonSection(tool, allRecords, allYears, selectedYears) 
   return `
     <div class="score-card" style="margin-top:16px;overflow-x:auto">
       <div class="sc-title">Compare Years</div>
+      ${locationControlsHtml}
       <div style="margin:10px 0">${yearChips}</div>
       ${body}
     </div>
   `;
 }
 
-function renderComparisonsTab(tool, yearFilter, compareYears) {
+function renderComparisonsTab(tool, yearFilter, compareYears, locationFilter) {
   const allRecords = tool === "tool1" ? DB.tool1.all() : DB.tool2.all();
   const years = Array.from(new Set(allRecords.map(recordYear))).sort();
   const filtered = (!yearFilter || yearFilter === "All") ? allRecords : allRecords.filter(r => recordYear(r) === yearFilter);
@@ -287,7 +321,7 @@ function renderComparisonsTab(tool, yearFilter, compareYears) {
       </div>
       ${renderHeatmapTable(tool, "By Setting", filtered, r => r.meta && r.meta.setting, "Setting")}
       ${renderHeatmapTable(tool, "By Zone", filtered, r => r.meta && r.meta.zone, "Zone")}
-      ${renderYearComparisonSection(tool, allRecords, years, selectedYears)}
+      ${renderYearComparisonSection(tool, allRecords, years, selectedYears, locationFilter)}
     </div>
   `;
 }
