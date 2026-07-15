@@ -299,7 +299,7 @@ function renderSidebar(activeKey) {
     <button class="nav-btn ${activeKey === "settings" ? "active" : ""}" data-nav="settings">
       <span class="ico">\u2699\uFE0F</span><span class="label">Settings</span>
     </button>
-    <div class="version">v1.0 &middot; Children on the Edge</div>
+    <div class="version">v1.0 &middot; Children on the Edge &amp; Learn to Play</div>
   `;
   sidebar.querySelectorAll("[data-nav]").forEach(btn => {
     btn.addEventListener("click", () => {
