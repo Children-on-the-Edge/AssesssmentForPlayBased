@@ -292,6 +292,42 @@ function renderComparisonsTab(tool, yearFilter, compareYears) {
   `;
 }
 
+// Generates an import template CSV from whatever this device's CURRENT Tool 1/Tool 2
+// section definitions actually are — guaranteed to match, unlike a static file, since
+// it's built from live data every time rather than a fixed snapshot that could drift
+// out of sync if sections are ever customized via Settings.
+function buildImportTemplateCSV(tool) {
+  const isT1 = tool === "tool1";
+  const sections = isT1 ? DB.tool1Sections.get() : DB.tool2Sections.get();
+  const metaRows = isT1 ? [
+    ["ID", "e.g. BUL001", "e.g. BUL002"],
+    ["Date of Birth", "01/03/2020", "15/07/2019"],
+    ["Age", "", ""],
+    ["Gender", "M", "F"],
+    ["Zone", "Example Zone", "Example Zone"],
+    ["Setting", "Example Setting", "Example Setting"],
+    ["Date of Assessment", "23/06/2026", "23/06/2026"],
+    ["Facilitator", "Example Facilitator Name", "Example Facilitator Name"],
+    ["Assessor", "Example Assessor Name", "Example Assessor Name"]
+  ] : [
+    ["Zone", "Example Zone", "Example Zone"],
+    ["Setting", "Example Setting", "Example Setting 2"],
+    ["Date of Assessment", "23/06/2026", "24/06/2026"],
+    ["Facilitator", "Example Facilitator Name", "Example Facilitator Name"],
+    ["Assessor", "Example Assessor Name", "Example Assessor Name"]
+  ];
+  const goalRows = [["Goal", "Score", "Score"]];
+  const commentKeys = [];
+  for (const data of Object.values(sections)) {
+    for (const g of data.goals) goalRows.push([g, "", ""]);
+    if (!commentKeys.includes(data.comment_key)) commentKeys.push(data.comment_key);
+  }
+  const commentRows = [["Comments"]];
+  for (const key of commentKeys) commentRows.push([key, "", ""]);
+  const rows = [...metaRows, [], ...goalRows, [], ...commentRows];
+  return DB.toCSVRows(rows);
+}
+
 // ── Generic table rendering ─────────────────────────────────────────
 function renderRecordsView(tool) {
   const isT1 = tool === "tool1";
@@ -376,6 +412,7 @@ function renderRecordsView(tool) {
         <span class="count-label" id="rv-count"></span>
         <div style="display:flex;gap:8px">
           ${syncAvailable ? `<button class="btn btn-outline" id="rv-sync">\u2601 Pull Latest</button>` : ""}
+          <button class="btn btn-outline" id="rv-download-template">Download Import Template</button>
           <button class="btn btn-primary" id="rv-import">+ Import CSV</button>
           <button class="btn btn-outline" id="rv-refresh">\u21BB Refresh</button>
         </div>
@@ -432,6 +469,12 @@ function renderRecordsView(tool) {
         draw();
       };
     }
+
+    document.getElementById("rv-download-template").onclick = () => {
+      const csv = buildImportTemplateCSV(tool);
+      DB.downloadText(`${tool}_import_template.csv`, csv);
+      toast("Template downloaded, matching this device's current sections.", "success");
+    };
 
     const fileInput = document.getElementById("rv-file-input");
     document.getElementById("rv-import").onclick = () => fileInput.click();
