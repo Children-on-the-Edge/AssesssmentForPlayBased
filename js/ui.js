@@ -284,11 +284,6 @@ function renderSidebar(activeKey) {
 
   sidebar.innerHTML = `
     <div class="logo-wrap"><img src="icons/logo-original.png" alt="Logo" /></div>
-    <div class="partner-logos">
-      <div class="partner-label">In partnership with</div>
-      <img src="icons/logo-cote.png" alt="Children on the Edge" class="org-logo" />
-      <img src="icons/logo-learntoplay.png" alt="Learn to Play" class="org-logo" />
-    </div>
     <div class="divider"></div>
     <div class="nav-label">TOOLS</div>
     ${toolBtns}
@@ -304,6 +299,13 @@ function renderSidebar(activeKey) {
     <button class="nav-btn ${activeKey === "settings" ? "active" : ""}" data-nav="settings">
       <span class="ico">\u2699\uFE0F</span><span class="label">Settings</span>
     </button>
+    <div class="partner-logos">
+      <div class="partner-label">In partnership with</div>
+      <div class="partner-logos-inner">
+        <img src="icons/logo-cote.png" alt="Children on the Edge" class="org-logo" />
+        <img src="icons/logo-learntoplay.png" alt="Learn to Play" class="org-logo" />
+      </div>
+    </div>
     <div class="version">v1.0 &middot; Children on the Edge &amp; Learn to Play</div>
   `;
   sidebar.querySelectorAll("[data-nav]").forEach(btn => {
