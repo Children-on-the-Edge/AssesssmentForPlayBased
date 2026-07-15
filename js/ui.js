@@ -302,8 +302,12 @@ function renderSidebar(activeKey) {
     <div class="partner-logos">
       <div class="partner-label">In partnership with</div>
       <div class="partner-logos-inner">
-        <img src="icons/logo-cote.png" alt="Children on the Edge" class="org-logo" />
-        <img src="icons/logo-learntoplay.png" alt="Learn to Play" class="org-logo" />
+        <a href="https://childrenontheedge.org/how-we-help/education" target="_blank" rel="noopener">
+          <img src="icons/logo-cote.png" alt="Children on the Edge" class="org-logo" />
+        </a>
+        <a href="https://learntoplay.org/our-model/ppat" target="_blank" rel="noopener">
+          <img src="icons/logo-learntoplay.png" alt="Learn to Play" class="org-logo" />
+        </a>
       </div>
     </div>
     <div class="version">v1.0 &middot; Children on the Edge &amp; Learn to Play</div>
