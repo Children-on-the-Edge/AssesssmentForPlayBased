@@ -40,7 +40,6 @@ const App = (() => {
       toast("Organization setup applied to this device.", "success");
     }
     await ensureAdminCredentials(); // only generates+shows a password if still needed after the above
-    renderZonePanel();
     navigate("dashboard");
 
     // Mobile hamburger menu: slides the sidebar in as an overlay with a dimmed backdrop.
