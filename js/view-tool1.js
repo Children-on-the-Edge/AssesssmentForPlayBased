@@ -200,7 +200,6 @@ function renderTool1(existingId) {
   document.getElementById("t1-save").onclick = () => {
     const rec = DB.tool1.save(collect());
     toast("Assessment saved.", "success");
-    renderZonePanel();
     renderTool1(rec.id);
 
     // Queues for the shared Google Sheet ledger, if Cloud Sync is set up. The record
