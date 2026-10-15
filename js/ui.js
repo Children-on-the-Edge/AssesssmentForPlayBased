@@ -173,97 +173,12 @@ function openLoginModal() {
   });
 }
 
-// ── Zone averages (Tool 1) ──────────────────────────────────────────
-function computeZoneAverages() {
-  const records = DB.tool1.all();
-  const byZone = {};
-  for (const rec of records) {
-    const zone = (rec.meta && rec.meta.zone || "").trim();
-    if (!zone) continue;
-    if (!byZone[zone]) {
-      byZone[zone] = { count: 0, sections: {} };
-      for (const k of Object.keys(SECTION_LABELS)) byZone[zone].sections[k] = [];
-    }
-    byZone[zone].count++;
-    for (const [goal, score] of Object.entries(rec.scores || {})) {
-      const prefix = goalPrefix(goal);
-      const val = TOOL1_NUMERIC[score];
-      if (prefix && val !== undefined) byZone[zone].sections[prefix].push(val);
-    }
-  }
-  const result = {};
-  for (const [zone, data] of Object.entries(byZone)) {
-    const entry = { count: data.count };
-    let all = [];
-    for (const [prefix, scores] of Object.entries(data.sections)) {
-      if (scores.length) {
-        entry[prefix] = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100;
-        all = all.concat(scores);
-      } else entry[prefix] = null;
-    }
-    entry.overall = all.length ? Math.round((all.reduce((a, b) => a + b, 0) / all.length) * 100) / 100 : null;
-    result[zone] = entry;
-  }
-  return result;
-}
-
 function goalPrefix(goalText) {
   goalText = (goalText || "").trim();
   const idx = goalText.indexOf(":");
   if (idx < 0) return null;
   const prefix = goalText.slice(0, idx).trim();
   return SECTION_LABELS[prefix] ? prefix : null;
-}
-
-function scoreColour(v) {
-  if (v === null || v === undefined) return "var(--text-light)";
-  if (v >= 1.6) return "var(--green)";
-  if (v >= 1.0) return "var(--amber)";
-  return "var(--red)";
-}
-
-function renderZonePanel() {
-  const panel = document.getElementById("zone-panel");
-  const data = computeZoneAverages();
-  const zones = Object.keys(data).sort();
-
-  let cardsHtml = "";
-  if (!zones.length) {
-    cardsHtml = `<div class="zp-empty">No data found.<br/>Complete a Child Development Tool assessment to see zone averages.</div>`;
-  } else {
-    cardsHtml = zones.map(zone => {
-      const info = data[zone];
-      const ov = info.overall;
-      const ovText = ov !== null ? ov.toFixed(2) : "\u2014";
-      const rows = Object.entries(SECTION_LABELS).map(([prefix, label]) => {
-        const val = info[prefix];
-        const pct = val !== null ? Math.round((val / 2) * 100) : 0;
-        const col = scoreColour(val);
-        const txt = val !== null ? val.toFixed(2) : "\u2014";
-        return `<div class="zc-row">
-          <span class="zc-label">${esc(label)}</span>
-          <span class="zc-bar-track"><span class="zc-bar-fill" style="width:${pct}%;background:${col}"></span></span>
-          <span class="zc-val" style="color:${col}">${txt}</span>
-        </div>`;
-      }).join("");
-      return `<div class="zone-card">
-        <div class="zc-top"><span class="zc-name">${esc(zone)}</span><span class="zc-count">${info.count} file${info.count !== 1 ? "s" : ""}</span></div>
-        <div class="zc-overall"><span class="zc-overall-label">Overall</span><span class="zc-overall-val" style="color:${scoreColour(ov)}">${ovText}</span></div>
-        <div class="zc-divider"></div>
-        ${rows}
-      </div>`;
-    }).join("");
-  }
-
-  panel.innerHTML = `
-    <div class="zp-header">
-      <h3>Zone Averages</h3>
-      <p>Scores out of 2.00</p>
-    </div>
-    <div class="zp-scroll">${cardsHtml}</div>
-    <button class="zp-refresh" id="zp-refresh-btn">&#8635; Refresh</button>
-  `;
-  document.getElementById("zp-refresh-btn").onclick = renderZonePanel;
 }
 
 // ── Sidebar ──────────────────────────────────────────────────────────
