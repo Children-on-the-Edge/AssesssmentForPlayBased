@@ -5,7 +5,7 @@
   --navy-hover: #3b72b0;
   --accent: #4a90c4;    /* logo blue bar */
   --accent2: #9b6ba0;   /* logo purple bar */
-  --logo-brown: #96603f; /* logo brown bar \u2014 used for the 4th nav card stripe */
+  --logo-brown: #96603f; /* logo brown bar — used for the 4th nav card stripe */
   --bg: #f0f4f8;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
@@ -14,7 +14,7 @@
   --text-light: #94a3b8;
   --green: #a8c93f;     /* logo lime green bar */
   --amber: #f0982c;     /* logo orange bar */
-  --red: #ef4444;       /* kept distinct from the logo palette \u2014 red still reads clearly as "error/danger" */
+  --red: #ef4444;       /* kept distinct from the logo palette — red still reads clearly as "error/danger" */
   --sidebar-bg: #0f2744;
   --radius-lg: 14px;
   --radius-md: 10px;
@@ -51,16 +51,16 @@ input, select, textarea { font-family: inherit; font-size: 13px; }
 .topbar .tagline { font-size: 11px; color: #64748b; }
 .body-row { flex: 1; display: flex; min-height: 0; }
 
+.hamburger-btn { display: none; background: transparent; border: none; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; flex-shrink: 0; }
+.cloud-status-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
+
+#sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 55; }
+#sidebar-backdrop.open { display: block; }
+
 /* Sidebar */
 .sidebar { width: 210px; min-width: 210px; background: var(--sidebar-bg); display: flex; flex-direction: column; }
 .sidebar .logo-wrap { background: #122540; padding: 14px 0; display: flex; justify-content: center; }
 .sidebar .logo-wrap img { width: 150px; height: auto; }
-.sidebar .partner-logos { background: var(--sidebar-bg); padding: 10px 0 14px; display: flex; flex-direction: column; align-items: center; }
-.sidebar .partner-logos .partner-label { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #64748b; text-transform: uppercase; margin-bottom: 8px; }
-.sidebar .partner-logos-inner { background: #fff; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 150px; }
-.sidebar .partner-logos-inner a { display: block; width: 100%; text-decoration: none; opacity: 1; transition: opacity .15s; }
-.sidebar .partner-logos-inner a:hover { opacity: .75; }
-.sidebar .partner-logos img.org-logo { width: 100%; height: auto; display: block; }
 .sidebar .divider { height: 1px; background: var(--navy-mid); }
 .sidebar .nav-label { font-size: 9px; font-weight: 700; letter-spacing: .06em; color: #475569; padding: 16px 18px 4px; }
 .nav-btn {
@@ -73,27 +73,12 @@ input, select, textarea { font-family: inherit; font-size: 13px; }
 .nav-btn .ico { font-size: 15px; width: 18px; text-align: center; }
 .sidebar .version { margin-top: auto; text-align: center; font-size: 9px; color: #334155; padding: 14px; }
 
-/* Zone panel */
-.zone-panel { width: 270px; min-width: 270px; background: #1a3558; display: flex; flex-direction: column; overflow: hidden; }
-.zone-panel .zp-header { background: #122540; padding: 14px 18px 12px; }
-.zone-panel .zp-header h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 15px; color: #fff; }
-.zone-panel .zp-header p { margin: 0; font-size: 10px; color: #64748b; }
-.zone-panel .zp-scroll { flex: 1; overflow-y: auto; padding: 10px 12px; }
-.zone-card { background: #162f52; border: 1px solid var(--navy-mid); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
-.zone-card .zc-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-.zone-card .zc-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: #fff; }
-.zone-card .zc-count { font-size: 10px; color: #64748b; }
-.zone-card .zc-overall { display: flex; align-items: baseline; gap: 6px; margin: 6px 0 8px; }
-.zone-card .zc-overall-label { font-size: 10px; color: #64748b; }
-.zone-card .zc-overall-val { font-size: 18px; font-weight: 700; }
-.zone-card .zc-divider { height: 1px; background: var(--navy-mid); margin: 0 0 8px; }
-.zone-card .zc-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; font-size: 10px; }
-.zone-card .zc-row .zc-label { color: #94a3b8; width: 118px; flex-shrink: 0; }
-.zone-card .zc-bar-track { width: 50px; height: 6px; background: #0f2744; border-radius: 3px; overflow: hidden; }
-.zone-card .zc-bar-fill { height: 100%; border-radius: 3px; }
-.zone-card .zc-row .zc-val { font-weight: 700; }
-.zone-panel .zp-refresh { margin: 6px 12px 12px; height: 32px; border-radius: 6px; background: #0f2744; color: #94a3b8; border: 1px solid var(--navy-mid); font-size: 11px; }
-.zone-panel .zp-empty { color: #64748b; font-size: 12px; text-align: center; padding: 30px 10px; }
+.sidebar .partner-logos { background: var(--sidebar-bg); padding: 10px 0 14px; display: flex; flex-direction: column; align-items: center; }
+.sidebar .partner-logos .partner-label { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #64748b; text-transform: uppercase; margin-bottom: 8px; }
+.sidebar .partner-logos-inner { background: #fff; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 150px; }
+.sidebar .partner-logos-inner a { display: block; width: 100%; text-decoration: none; opacity: 1; transition: opacity .15s; }
+.sidebar .partner-logos-inner a:hover { opacity: .75; }
+.sidebar .partner-logos img.org-logo { width: 100%; height: auto; display: block; }
 
 /* Main content */
 .main { flex: 1; min-width: 0; overflow-y: auto; background: var(--bg); }
@@ -222,12 +207,6 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
 .toast.success { background: #14532d; }
 .empty-state { text-align: center; color: var(--text-light); padding: 40px 20px; font-size: 13px; }
 
-.hamburger-btn { display: none; background: transparent; border: none; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px; flex-shrink: 0; }
-.cloud-status-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
-
-#sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 55; }
-#sidebar-backdrop.open { display: block; }
-
 @media (max-width: 760px) {
   .hamburger-btn { display: inline-block; }
   .topbar .tagline { display: none; }
@@ -244,7 +223,6 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
     z-index: 60;
   }
   .sidebar.open { transform: translateX(0); }
-  .zone-panel { display: none; }
 }
 
 /* Print / "Download PDF" support — used by the Action Plan's Download PDF button
@@ -254,7 +232,7 @@ table.records-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
 @media print {
   @page { size: landscape; margin: 10mm; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-  .sidebar, .zone-panel, .topbar, #sidebar-backdrop, .settings-tabs, button {
+  .sidebar, .topbar, #sidebar-backdrop, .settings-tabs, button {
     display: none !important;
   }
   .body-row { display: block; }
