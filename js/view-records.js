@@ -180,7 +180,8 @@ function renderHeatmapTable(tool, title, records, groupKeyFn, rowLabel) {
 
 // Interactive multi-select year comparison: pick any years, see them side by side
 // per skill/section, with a small +/- delta between each consecutive selected year
-// showing exactly where results improved or slipped.
+// showing exactly where results improved or slipped. Also supports narrowing to one
+// specific Setting or Zone, so you can see whether a particular location is improving.
 function renderYearComparisonSection(tool, allRecords, allYears, selectedYears, locationFilter) {
   locationFilter = locationFilter || { mode: "all", value: "" };
   const isT1 = tool === "tool1";
@@ -508,7 +509,6 @@ function renderRecordsView(tool) {
         try {
           const n = await SheetsSync.syncNow(tool);
           toast(`Pulled ${n} updated record(s) from the shared sheet.`, "success");
-          if (isT1) renderZonePanel();
         } catch (e) {
           toast("Cloud sync failed: " + e.message, "error");
         }
@@ -546,7 +546,6 @@ function renderRecordsView(tool) {
       }
       toast(`Imported ${count} record${count !== 1 ? "s" : ""}.`, "success");
       fileInput.value = "";
-      if (isT1) renderZonePanel();
       draw();
 
       // Queues each imported record for the shared Google Sheet, if Cloud Sync is set
@@ -572,7 +571,6 @@ function renderRecordsView(tool) {
         if (!ok) return;
         if (isT1) DB.tool1.remove(btn.dataset.del); else DB.tool2.remove(btn.dataset.del);
         toast("Record deleted.");
-        if (isT1) renderZonePanel();
         draw();
       });
     });
