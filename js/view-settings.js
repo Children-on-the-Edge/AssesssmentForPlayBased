@@ -309,7 +309,6 @@ function renderSettings() {
         }
         await DB.restoreFromFile(text, mode, password);
         toast("Backup restored.", "success");
-        renderZonePanel();
       } catch (e) {
         console.error(e);
         toast(looksEncrypted ? "Incorrect password, or the file is corrupted." : "Could not read that backup file.", "error");
@@ -328,7 +327,6 @@ function renderSettings() {
       if (!ok) return;
       DB.tool1.clearAll();
       toast(`${count} Tool 1 record${count !== 1 ? "s" : ""} deleted.`, "success");
-      renderZonePanel();
     };
 
     document.getElementById("clear-tool2").onclick = async () => {
@@ -386,9 +384,6 @@ function renderSettings() {
 function renderCloudSyncPage() {
   const main = document.getElementById("main");
 
-  // Best-effort guess at "https://github.com/<org>/<repo>/blob/main/CLOUD_SYNC_SETUP.md"
-  // from the current GitHub Pages URL, so this link works for any org/repo that
-  // deploys this app, not just the one it was originally built for.
   function guessSetupGuideUrl() {
     try {
       const host = location.hostname; // e.g. "children-on-the-edge.github.io"
@@ -526,7 +521,6 @@ function renderCloudSyncPage() {
         const n = await SheetsSync.syncNow(tool);
         status.textContent = `Done. ${n} record(s) updated from the shared sheet.`;
         toast(`${label}: pulled ${n} updated record(s).`, "success");
-        renderZonePanel();
       } catch (e) {
         status.textContent = "Error: " + e.message;
       }
