@@ -59,7 +59,7 @@ function parseOrgSetupCSVRows(rows) {
     const value = (row[1] || "").trim();
     if (!rawField || !value) continue;
     const key = rawField.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (key === "zone" || key === "zones") values.Zone.push(value);
+    if (key === "location" || key === "locations" || key === "zone" || key === "zones") values.Zone.push(value); // "Zone" still accepted for older forms
     else if (key === "setting" || key === "settings") values.Setting.push(value);
     else if (key === "facilitator" || key === "facilitators") values.Facilitator.push(value);
     else if (key === "assessor" || key === "assessors") values.Assessor.push(value);
@@ -94,7 +94,7 @@ async function buildOrgSetupPayloadFromCSVRows(rows) {
 function summarizeOrgSetupPayload(payload) {
   const v = payload.values || {};
   const parts = [
-    `${(v.Zone || []).length} Zone(s)`,
+    `${(v.Zone || []).length} Location(s)`,
     `${(v.Setting || []).length} Setting(s)`,
     `${(v.Facilitator || []).length} Facilitator(s)`,
     `${(v.Assessor || []).length} Assessor(s)`,
@@ -105,8 +105,8 @@ function summarizeOrgSetupPayload(payload) {
 }
 
 const ORG_SETUP_CSV_TEMPLATE = `Field,Value
-Zone,Example Zone 1
-Zone,Example Zone 2
+Location,Example Location 1
+Location,Example Location 2
 Setting,Example Setting 1
 Setting,Example Setting 2
 Facilitator,Example Facilitator Name
@@ -125,7 +125,7 @@ AdminPassword,ChooseAStrongPassword123
 function buildOrgSetupCSVFromCurrentDevice() {
   const values = DB.values.get();
   const rows = [["Field", "Value"]];
-  (values.Zone || []).forEach(v => rows.push(["Zone", v]));
+  (values.Zone || []).forEach(v => rows.push(["Location", v]));
   (values.Setting || []).forEach(v => rows.push(["Setting", v]));
   (values.Facilitator || []).forEach(v => rows.push(["Facilitator", v]));
   (values.Assessor || []).forEach(v => rows.push(["Assessor", v]));
