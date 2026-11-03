@@ -243,7 +243,7 @@ function renderYearComparisonSection(tool, allRecords, allYears, selectedYears, 
       <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
         <button data-cmp-loc-mode="all" class="small-btn" style="border:none;background:${locationFilter.mode === "all" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "all" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">All Locations</button>
         <button data-cmp-loc-mode="setting" class="small-btn" style="border:none;background:${locationFilter.mode === "setting" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
-        <button data-cmp-loc-mode="zone" class="small-btn" style="border:none;background:${locationFilter.mode === "zone" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+        <button data-cmp-loc-mode="zone" class="small-btn" style="border:none;background:${locationFilter.mode === "zone" ? "#fff" : "transparent"};box-shadow:${locationFilter.mode === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Location</button>
       </div>
       ${locationFilter.mode !== "all" ? `
         <select id="cmp-loc-value">
@@ -321,7 +321,7 @@ function renderComparisonsTab(tool, yearFilter, compareYears, locationFilter) {
         <span style="font-size:11px;color:var(--text-light);margin-left:8px">${esc(scaleNote)}</span>
       </div>
       ${renderHeatmapTable(tool, "By Setting", filtered, r => r.meta && r.meta.setting, "Setting")}
-      ${renderHeatmapTable(tool, "By Zone", filtered, r => r.meta && r.meta.zone, "Zone")}
+      ${renderHeatmapTable(tool, "By Location", filtered, r => r.meta && r.meta.zone, "Location")}
       ${renderYearComparisonSection(tool, allRecords, years, selectedYears, locationFilter)}
     </div>
   `;
@@ -339,13 +339,13 @@ function buildImportTemplateCSV(tool) {
     ["Date of Birth", "01/03/2020", "15/07/2019"],
     ["Age", "", ""],
     ["Gender", "M", "F"],
-    ["Zone", "Example Zone", "Example Zone"],
+    ["Location", "Example Location", "Example Location"],
     ["Setting", "Example Setting", "Example Setting"],
     ["Date of Assessment", "23/06/2026", "23/06/2026"],
     ["Facilitator", "Example Facilitator Name", "Example Facilitator Name"],
     ["Assessor", "Example Assessor Name", "Example Assessor Name"]
   ] : [
-    ["Zone", "Example Zone", "Example Zone"],
+    ["Location", "Example Location", "Example Location"],
     ["Setting", "Example Setting", "Example Setting 2"],
     ["Date of Assessment", "23/06/2026", "24/06/2026"],
     ["Facilitator", "Example Facilitator Name", "Example Facilitator Name"],
@@ -423,8 +423,8 @@ function renderRecordsView(tool) {
     const filtered = applyFilters(allRows);
 
     const headerCols = isT1
-      ? `<th></th><th>Assessment</th><th>Child ID</th><th>Date</th><th>Status</th><th>Age</th><th>Gender</th><th>Line Items</th><th>Overall</th><th>Setting</th><th>Assessor</th><th>Facilitator</th><th>Zone</th><th></th>`
-      : `<th></th><th>Assessment</th><th>Date</th><th>Status</th><th>Line Items</th><th>% Yes</th><th>Setting</th><th>Assessor</th><th>Facilitator</th><th>Zone</th><th></th>`;
+      ? `<th></th><th>Assessment</th><th>Child ID</th><th>Date</th><th>Status</th><th>Age</th><th>Gender</th><th>Line Items</th><th>Overall</th><th>Setting</th><th>Assessor</th><th>Facilitator</th><th>Location</th><th></th>`
+      : `<th></th><th>Assessment</th><th>Date</th><th>Status</th><th>Line Items</th><th>% Yes</th><th>Setting</th><th>Assessor</th><th>Facilitator</th><th>Location</th><th></th>`;
 
     const bodyRows = filtered.map((r, i) => {
       const common = `<td>${i + 1}</td><td>${esc(r.assessId)}</td>`;
@@ -643,13 +643,13 @@ function renderRecordDetail(tool, id, onBack) {
             <div class="meta-field"><div class="mf-label">Gender</div><div class="mf-value">${esc(m.gender || "\u2014")}</div></div>
             <div class="meta-field"><div class="mf-label">Date</div><div class="mf-value">${esc(m.date || "\u2014")}</div></div>
           ` : `
-            <div class="meta-field"><div class="mf-label">Zone</div><div class="mf-value">${esc(m.zone || "\u2014")}</div></div>
+            <div class="meta-field"><div class="mf-label">Location</div><div class="mf-value">${esc(m.zone || "\u2014")}</div></div>
             <div class="meta-field"><div class="mf-label">Date</div><div class="mf-value">${esc(m.date || "\u2014")}</div></div>
           `}
           <div class="meta-field"><div class="mf-label">Facilitator</div><div class="mf-value">${esc(m.facilitator || "\u2014")}</div></div>
           <div class="meta-field"><div class="mf-label">Setting</div><div class="mf-value">${esc(m.setting || "\u2014")}</div></div>
           <div class="meta-field"><div class="mf-label">Assessor</div><div class="mf-value">${esc(m.assessor || "\u2014")}</div></div>
-          ${!isT1 ? `<div class="meta-field"><div class="mf-label">Zone</div><div class="mf-value">${esc(m.zone || "\u2014")}</div></div>` : ""}
+          ${!isT1 ? `<div class="meta-field"><div class="mf-label">Location</div><div class="mf-value">${esc(m.zone || "\u2014")}</div></div>` : ""}
         </div>
         <div class="summary-card">
           ${rightExtra}
