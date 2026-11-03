@@ -58,7 +58,7 @@ function renderTool2(existingId) {
     </div>
     <div class="info-bar">
       <div class="info-row">
-        <div class="field-col"><label>Zone</label>${dropdown("zone", meta.zone, values.Zone || [], 150)}</div>
+        <div class="field-col"><label>Location</label>${dropdown("zone", meta.zone, values.Zone || [], 150)}</div>
         <div class="field-col"><label>Setting</label>${dropdown("setting", meta.setting, values.Setting || [], 150)}</div>
         <div class="field-col"><label>Date of Assessment</label><input data-field="date" value="${esc(meta.date)}" style="width:120px" /></div>
         <div class="field-col"><label>Facilitator</label>${dropdown("facilitator", meta.facilitator, values.Facilitator || [], 220)}</div>
