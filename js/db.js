@@ -121,9 +121,6 @@ const DB = (() => {
     set: (v) => _set(KEYS.tool2sections, v)
   };
 
-  // Freeform Strengths/Areas for Development/Target+Actions notes per Setting or
-  // Zone group, keyed like "setting:Kimbiliyo" or "zone:Buliti" to keep the two
-  // groupings from colliding if a name were ever reused across both.
   const actionPlanNotes = {
     get: () => _get(KEYS.actionPlanNotes, {}),
     set: (v) => _set(KEYS.actionPlanNotes, v),
@@ -271,7 +268,7 @@ const DB = (() => {
       ["Date of Birth", rec.meta.dob || ""],
       ["Age", rec.meta.age || ""],
       ["Gender", rec.meta.gender || ""],
-      ["Zone", rec.meta.zone || ""],
+      ["Location", rec.meta.zone || ""],
       ["Setting", rec.meta.setting || ""],
       ["Date of Assessment", rec.meta.date || ""],
       ["Facilitator", rec.meta.facilitator || ""],
@@ -327,7 +324,7 @@ const DB = (() => {
   function tool1FromCSVRows(rows) {
     const metaMap = {
       ID: "id", "Date of Birth": "dob", Age: "age", Gender: "gender",
-      Zone: "zone", Setting: "setting", "Date of Assessment": "date",
+      Zone: "zone", Location: "zone", Setting: "setting", "Date of Assessment": "date",
       Facilitator: "facilitator", Assessor: "assessor"
     };
     // Note: "Name" is deliberately not read from CSVs — child names are never stored.
@@ -336,7 +333,7 @@ const DB = (() => {
 
   function tool2ToCSVRows(rec) {
     const rows = [
-      ["Zone", rec.meta.zone || ""],
+      ["Location", rec.meta.zone || ""],
       ["Setting", rec.meta.setting || ""],
       ["Date of Assessment", rec.meta.date || ""],
       ["Facilitator", rec.meta.facilitator || ""],
@@ -356,7 +353,7 @@ const DB = (() => {
   }
 
   function tool2FromCSVRows(rows) {
-    const metaMap = { Zone: "zone", Setting: "setting", "Date of Assessment": "date", Facilitator: "facilitator", Assessor: "assessor" };
+    const metaMap = { Zone: "zone", Location: "zone", Setting: "setting", "Date of Assessment": "date", Facilitator: "facilitator", Assessor: "assessor" };
     return parseMultiCSVRows(rows, metaMap); // always an array — 1 entry for a single-record file
   }
 
