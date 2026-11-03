@@ -33,7 +33,7 @@ function renderDashboard() {
 
       <div class="stats-row">
         <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${stats.total}</div><div class="stat-label">Total Assessments</div></div>
-        <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${stats.zones}</div><div class="stat-label">Zones Active</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${stats.zones}</div><div class="stat-label">Locations Active</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--green)">${stats.avg}</div><div class="stat-label">Overall Avg Score</div></div>
       </div>
 
@@ -56,12 +56,12 @@ function renderDashboard() {
         </div>
         <div class="nav-card" style="--stripe:var(--logo-brown)" data-go="tool2records">
           <h4>Environmental Records</h4>
-          <p>Browse saved environmental assessments by setting and zone.</p>
+          <p>Browse saved environmental assessments by setting and location.</p>
           <button class="go-btn">Open &rarr;</button>
         </div>
         <div class="nav-card" style="--stripe:var(--accent2)" data-go="reports">
           <h4>Reports</h4>
-          <p>Charts, Zone/Setting comparisons, and the Action Plan generator.</p>
+          <p>Charts, Location/Setting comparisons, and the Action Plan generator.</p>
           <button class="go-btn">Open &rarr;</button>
         </div>
       </div>
