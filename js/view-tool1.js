@@ -105,7 +105,7 @@ function renderTool1(existingId) {
         <div class="field-col"><label>Gender</label>${dropdown("gender", meta.gender, ["M", "F"], 70)}</div>
       </div>
       <div class="info-row" style="margin-top:8px">
-        <div class="field-col"><label>Zone</label><span id="t1-zone-wrap">${dropdown("zone", meta.zone, values.Zone || [], 140)}</span></div>
+        <div class="field-col"><label>Location</label><span id="t1-zone-wrap">${dropdown("zone", meta.zone, values.Zone || [], 140)}</span></div>
         <div class="field-col"><label>Setting</label>${dropdown("setting", meta.setting, values.Setting || [], 140)}</div>
         <div class="field-col"><label>Date of Assessment</label><input id="t1-date-input" data-field="date" value="${esc(meta.date)}" style="width:110px" /></div>
         <div class="field-col"><label>Facilitator</label>${dropdown("facilitator", meta.facilitator, values.Facilitator || [], 200)}</div>
