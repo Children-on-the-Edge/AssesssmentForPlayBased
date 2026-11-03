@@ -182,13 +182,13 @@ function renderReportsPage() {
 
     const compareChartHtml = compareSeries.length
       ? buildGroupedBarChartSVG(compareCategories, compareSeries, 2)
-      : `<div class="empty-state" style="padding:30px 10px">Select one or more ${s.compareBy === "zone" ? "zones" : "settings"} above to compare.</div>`;
+      : `<div class="empty-state" style="padding:30px 10px">Select one or more ${s.compareBy === "zone" ? "locations" : "settings"} above to compare.</div>`;
 
     body.innerHTML = `
       <div style="padding:16px 18px">
         <div class="info-row" style="margin-bottom:16px">
           ${filterSelect("rp-gender", "Gender", ["M", "F"], s.gender)}
-          ${filterSelect("rp-zone", "Zone", values.Zone || [], s.zone)}
+          ${filterSelect("rp-zone", "Location", values.Zone || [], s.zone)}
           ${filterSelect("rp-setting", "Setting", values.Setting || [], s.setting)}
           ${filterSelect("rp-facilitator", "Facilitator", values.Facilitator || [], s.facilitator)}
           ${filterSelect("rp-assessor", "Assessor", values.Assessor || [], s.assessor)}
@@ -207,14 +207,14 @@ function renderReportsPage() {
 
         <div class="score-card" style="margin-top:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-            <div class="sc-title">Compare Zones / Settings</div>
+            <div class="sc-title">Compare Locations / Settings</div>
             <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
-              <button data-compare-by="zone" class="small-btn" style="border:none;background:${s.compareBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.compareBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+              <button data-compare-by="zone" class="small-btn" style="border:none;background:${s.compareBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.compareBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Location</button>
               <button data-compare-by="setting" class="small-btn" style="border:none;background:${s.compareBy === "setting" ? "#fff" : "transparent"};box-shadow:${s.compareBy === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
             </div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">
-            ${compareOptions.map(name => compareChip(name)).join("") || `<span style="font-size:12px;color:var(--text-light)">No ${s.compareBy === "zone" ? "zones" : "settings"} with data yet.</span>`}
+            ${compareOptions.map(name => compareChip(name)).join("") || `<span style="font-size:12px;color:var(--text-light)">No ${s.compareBy === "zone" ? "locations" : "settings"} with data yet.</span>`}
           </div>
           <div>${compareChartHtml}</div>
           <div style="margin-top:8px">${compareLegend}</div>
@@ -279,8 +279,8 @@ function renderReportsPage() {
     }
   }
 
-  // ── Action Plan tab (single-location report: score tables, Going Well /
-  // Needs Addressing, and editable notes — matching the original per-zone
+  // ── Action Plan tab (single-location report: score tables, Strengths /
+  // Areas for Development, and editable notes — matching the original per-zone
   // dashboard layout, filtered to one Setting or Zone at a time) ──
   function drawActionPlanTab(body) {
     const s = state.actionplan;
@@ -299,7 +299,7 @@ function renderReportsPage() {
     const names = distinctGroupNames(t1All, t2All);
     if (!s.selectedGroup || !names.includes(s.selectedGroup)) s.selectedGroup = names[0] || null;
 
-    const rowLabel = s.groupBy === "setting" ? "Setting" : "Zone";
+    const rowLabel = s.groupBy === "setting" ? "Setting" : "Location";
     const t1ForLocation = s.selectedGroup ? t1All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === s.selectedGroup) : [];
     const t2ForLocation = s.selectedGroup ? t2All.filter(r => ((r.meta && r.meta[s.groupBy]) || "").trim() === s.selectedGroup) : [];
 
@@ -341,11 +341,11 @@ function renderReportsPage() {
 
     body.innerHTML = `
       <div style="padding:16px 18px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
               <button data-ap-groupby="setting" class="small-btn" style="border:none;background:${s.groupBy === "setting" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "setting" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Setting</button>
-              <button data-ap-groupby="zone" class="small-btn" style="border:none;background:${s.groupBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Zone</button>
+              <button data-ap-groupby="zone" class="small-btn" style="border:none;background:${s.groupBy === "zone" ? "#fff" : "transparent"};box-shadow:${s.groupBy === "zone" ? "0 1px 3px rgba(0,0,0,.15)" : "none"}">By Location</button>
             </div>
             <label style="font-size:12px;font-weight:700;color:var(--text-mid)">${esc(rowLabel)}:</label>
             <select id="ap-location-select">
