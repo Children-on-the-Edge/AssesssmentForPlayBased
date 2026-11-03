@@ -40,7 +40,7 @@ function renderSettings() {
       <div class="values-columns">
         ${cols.map(col => `
           <div class="value-col" data-col="${col}">
-            <div class="vc-header">${col}</div>
+            <div class="vc-header">${col === "Zone" ? "Location" : col}</div>
             <div class="vc-rows">
               ${(data[col] || []).map(v => rowHtml(v)).join("")}
             </div>
@@ -108,7 +108,7 @@ function renderSettings() {
       <div class="score-card" style="max-width:640px;margin-top:16px">
         <div class="sc-title">Option B \u2014 Generate from a CSV / Google Sheet export</div>
         <div class="sc-body">
-          Upload a two-column <code>Field, Value</code> CSV (export a Google Sheet as CSV, or edit one directly). Repeat the field name on multiple rows for each Zone/Setting/Facilitator/Assessor; use one row each for the singular fields. Recognized field names: <code>Zone</code>, <code>Setting</code>, <code>Facilitator</code>, <code>Assessor</code>, <code>ClientID</code>, <code>SheetID</code>, <code>AdminUsername</code>, <code>AdminPassword</code>.
+          Upload a two-column <code>Field, Value</code> CSV (export a Google Sheet as CSV, or edit one directly). Repeat the field name on multiple rows for each Location/Setting/Facilitator/Assessor; use one row each for the singular fields. Recognized field names: <code>Location</code> (or <code>Zone</code>), <code>Setting</code>, <code>Facilitator</code>, <code>Assessor</code>, <code>ClientID</code>, <code>SheetID</code>, <code>AdminUsername</code>, <code>AdminPassword</code>.
           <br/><br/>
           The password is hashed in your browser before the link is built \u2014 the link itself never contains a readable password, only the same kind of one-way hash the login screen already uses.
         </div>
@@ -119,7 +119,7 @@ function renderSettings() {
           <button class="btn btn-outline" id="apply-csv-now">Apply to This Device Now</button>
           <button class="btn btn-primary" id="gen-setup-link-csv">Generate Link from CSV</button>
         </div>
-        <div style="font-size:11px;color:var(--text-light);margin-top:6px">"Export Current Setup" is the easiest starting point if you just want to add more Zones/Settings/etc. to what's already here \u2014 it downloads the real current list (plus this device's Cloud Sync config and admin login, safely as a hash) ready to bulk-edit and re-upload. Use "Apply to This Device Now" to update <em>this</em> device directly from the edited CSV; use "Generate Link from CSV" to build a link for <em>other</em> devices.</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:6px">"Export Current Setup" is the easiest starting point if you just want to add more Locations/Settings/etc. to what's already here \u2014 it downloads the real current list (plus this device's Cloud Sync config and admin login, safely as a hash) ready to bulk-edit and re-upload. Use "Apply to This Device Now" to update <em>this</em> device directly from the edited CSV; use "Generate Link from CSV" to build a link for <em>other</em> devices.</div>
         <div id="csv-setup-summary" style="margin-top:10px;font-size:12px;color:var(--text-mid)"></div>
         <div id="csv-setup-link-wrap" style="display:none;margin-top:10px">
           <input id="csv-setup-link-output" readonly style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 9px;font-size:11px" />
